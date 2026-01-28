@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html class="light" lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Odido Planner - AI Project Assistant</title>
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <!-- Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <!-- Theme Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#715eed",
+            "primary-dark": "#5842d8",
+            "background-light": "#f6f6f8",
+            "background-dark": "#131121",
+            "surface-light": "#ffffff",
+            "surface-dark": "#1e1b2e",
+            "odido-magenta": "#e20074",
+            "odido-black": "#121118",
+            "odido-gray": "#686388",
+            "odido-orange": "#e65300",
+          },
+          fontFamily: {
+            "display": ["Spline Sans", "sans-serif"],
+            "body": ["Noto Sans", "sans-serif"],
+          },
+          borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "2xl": "2rem", "full": "9999px"},
+          boxShadow: {
+            'soft': '0 4px 20px -2px rgba(113, 94, 237, 0.1)',
+            'glow': '0 0 15px rgba(113, 94, 237, 0.3)',
+            'card': '0 2px 8px rgba(0,0,0,0.04), 0 0 1px rgba(0,0,0,0.1)',
+            'floating': '0 4px 24px rgba(0,0,0,0.08)',
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'spin-slow': 'spin 3s linear infinite',
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Spline Sans', 'Noto Sans', -apple-system, sans-serif; min-height: 100dvh; }
+
+    /* iPhone Frame - Only visible on desktop */
+    .iphone-frame { display: none; }
+
+    @media (min-width: 768px) {
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+      .iphone-frame {
+        display: block;
+        position: relative;
+        width: 430px;
+        height: 932px;
+        background: #1a1a1a;
+        border-radius: 60px;
+        padding: 14px;
+        box-shadow:
+          0 50px 100px -20px rgba(0,0,0,0.25),
+          0 30px 60px -30px rgba(0,0,0,0.3),
+          inset 0 0 0 2px #2a2a2a,
+          inset 0 0 0 4px #1a1a1a;
+        flex-shrink: 0;
+      }
+      .iphone-frame::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 150px;
+        height: 30px;
+        background: #1a1a1a;
+        border-radius: 0 0 20px 20px;
+        z-index: 100;
+      }
+      .iphone-screen {
+        width: 100%;
+        height: 100%;
+        background: #f6f6f8;
+        border-radius: 48px;
+        overflow: hidden;
+        position: relative;
+      }
+      .mobile-container {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+      }
+      .screen {
+        min-height: 100% !important;
+        height: 100%;
+        overflow-y: auto;
+      }
+      .screen:not(#meeting-screen) {
+        padding-top: 30px;
+      }
+      .screen .fixed, .mobile-container .fixed {
+        position: absolute !important;
+      }
+      .modal-overlay {
+        position: absolute !important;
+        border-radius: 0 0 48px 48px;
+      }
+    }
+
+    @media (max-width: 767px) {
+      body {
+        background: #f6f6f8;
+      }
+      .iphone-frame { display: contents; }
+      .iphone-screen { display: contents; }
+      .mobile-container { display: contents; }
+    }
+
+    .reset-btn { position: fixed; top: 20px; right: 20px; padding: 8px 16px; background: rgba(255,255,255,0.9); border: 1px solid #E5E7EB; border-radius: 8px; color: #6B7280; font-size: 12px; cursor: pointer; font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.2s; z-index: 1000; }
+    .reset-btn:hover { background: white; border-color: #9CA3AF; color: #4B5563; }
+
+    /* Hide scrollbars */
+    .no-scrollbar::-webkit-scrollbar, .screen::-webkit-scrollbar, .mobile-container::-webkit-scrollbar, .iphone-screen::-webkit-scrollbar, *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+    .no-scrollbar, .screen, .mobile-container, .iphone-screen, * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+    .screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto; padding: 60px 20px 100px; background: #f6f6f8; display: none; min-height: 100dvh; }
+    .screen.active { display: block; }
+    .screen::-webkit-scrollbar { display: none; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-icon { width: 36px; height: 36px; background: #EDE9F5; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .logo-text { font-size: 16px; font-weight: 600; color: #715eed; }
+    /* Centered top logo */
+    .top-logo-container { display: flex; justify-content: center; margin-bottom: 16px; }
+    .top-logo { height: 40px; width: auto; object-fit: contain; }
+    .notification-bell { position: relative; cursor: pointer; }
+    .notification-dot { position: absolute; top: 0; right: 0; width: 8px; height: 8px; background: #F97316; border-radius: 50%; }
+    .greeting h1 { font-size: 32px; font-weight: 700; color: #1F2937; margin-bottom: 4px; }
+    .date { font-size: 14px; color: #6B7280; }
+    .stats-row { display: flex; gap: 12px; margin: 24px 0; }
+    .stat-card { flex: 1; background: white; border-radius: 20px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .stat-icon { width: 44px; height: 44px; background: #EDE9F5; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+    .stat-number { font-size: 36px; font-weight: 700; color: #1F2937; }
+    .stat-label { font-size: 13px; color: #6B7280; }
+    .section-header { display: flex; align-items: center; gap: 8px; margin: 8px 0 16px; }
+    .section-header h2 { font-size: 18px; font-weight: 600; color: #1F2937; }
+    .suggestion-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .tag { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    .tag.efficiency { background: #E0E7FF; color: #4F46E5; }
+    .tag.deadline, .tag.urgent-tag { background: #FEE2E2; color: #DC2626; }
+    .tag.progress-tag { background: #E0E7FF; color: #4F46E5; }
+    .suggestion-card h3 { font-size: 18px; font-weight: 600; color: #1F2937; margin: 12px 0 8px; }
+    .suggestion-card p { font-size: 14px; color: #6B7280; line-height: 1.5; margin-bottom: 16px; }
+    .suggestion-actions { display: flex; gap: 12px; }
+    .btn-secondary { flex: 1; padding: 12px; background: #F3F0F8; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; color: #715eed; cursor: pointer; }
+    .btn-primary { flex: 1; padding: 12px; background: linear-gradient(135deg, #F97316, #FB923C); border: none; border-radius: 12px; font-size: 14px; font-weight: 600; color: white; cursor: pointer; }
+    .deadline-card { border-left: 3px solid #F97316; }
+    .card-footer { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 11px; margin-left: -8px; border: 2px solid white; }
+    .avatar:first-child { margin-left: 0; }
+    .contributors { font-size: 12px; color: #6B7280; flex: 1; }
+    .link { font-size: 14px; font-weight: 600; color: #715eed; background: none; border: none; cursor: pointer; }
+    .back-btn { background: none; border: none; cursor: pointer; }
+    .header-title { font-size: 16px; font-weight: 600; color: #1F2937; }
+    .meeting-title h1 { font-size: 28px; font-weight: 700; color: #1F2937; margin-bottom: 8px; }
+    .meeting-time { display: flex; align-items: center; gap: 8px; color: #6B7280; font-size: 14px; margin-bottom: 20px; }
+    .ai-analysis-card { background: linear-gradient(135deg, #EDE9F5, #E8E0F5); border-radius: 20px; padding: 16px; margin-bottom: 24px; }
+    .ai-label { font-size: 12px; font-weight: 600; color: #715eed; text-transform: uppercase; }
+    .ai-analysis-content { display: flex; justify-content: space-between; margin: 12px 0 16px; }
+    .ai-text h3 { font-size: 16px; font-weight: 600; color: #1F2937; margin-bottom: 6px; }
+    .ai-text p { font-size: 13px; color: #6B7280; max-width: 200px; }
+    .robot-image { width: 80px; height: 80px; border-radius: 16px; background: #C0AEDE; }
+    .robot-image img { width: 100%; height: 100%; }
+    .disciplines { padding-top: 16px; border-top: 1px solid rgba(123,104,238,0.2); }
+    .discipline-label { font-size: 11px; font-weight: 600; color: #6B7280; text-transform: uppercase; margin-bottom: 10px; display: block; }
+    .discipline-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .discipline-tag { padding: 8px 14px; background: white; border-radius: 20px; font-size: 13px; border: 1px solid #E5E7EB; }
+    .invitees-section { margin-bottom: 100px; }
+    .invitees-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .invitees-header h2 { font-size: 18px; font-weight: 600; }
+    .edit-link { font-size: 14px; color: #715eed; background: none; border: none; cursor: pointer; }
+    .invitees-list { background: white; border-radius: 16px; overflow: hidden; }
+    .invitee-row { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid #F3F4F6; }
+    .invitee-row:last-child { border-bottom: none; }
+    .invitee-info { flex: 1; }
+    .invitee-name { font-size: 15px; font-weight: 600; color: #1F2937; display: block; }
+    .invitee-role { font-size: 13px; color: #6B7280; }
+    .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; }
+    .badge.essential { background: #D1FAE5; color: #059669; }
+    .badge.optional { background: #F3F4F6; color: #6B7280; }
+    .meeting-action { position: absolute; bottom: 30px; left: 20px; right: 20px; }
+    .btn-send { width: 100%; padding: 16px; background: #1F2937; border: none; border-radius: 16px; font-size: 16px; font-weight: 600; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #E5E7EB; padding-bottom: 12px; }
+    .tab { padding: 8px 16px; background: none; border: none; font-size: 14px; color: #6B7280; cursor: pointer; position: relative; }
+    .tab.active { color: #715eed; font-weight: 600; }
+    .tab.active::after { content: ''; position: absolute; bottom: -13px; left: 0; right: 0; height: 3px; background: #715eed; border-radius: 3px 3px 0 0; }
+    .time-label { font-size: 12px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; margin-bottom: 12px; display: block; }
+    .update-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+    .update-card.urgent { border: 2px solid #F97316; background: linear-gradient(135deg, #FFF7ED, white); }
+    .update-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .project-badge { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot.orange { background: #F97316; }
+    .project-name { font-size: 12px; font-weight: 600; color: #6B7280; text-transform: uppercase; }
+    .time { font-size: 12px; color: #9CA3AF; }
+    .update-title { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .update-title h3 { font-size: 16px; font-weight: 600; }
+    .update-body p { font-size: 14px; color: #6B7280; margin-bottom: 16px; }
+    .update-footer { display: flex; justify-content: space-between; align-items: center; }
+    .urgent-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #F59E0B; }
+    .btn-action { padding: 10px 20px; background: linear-gradient(135deg, #F97316, #FB923C); border: none; border-radius: 10px; font-size: 14px; font-weight: 600; color: white; cursor: pointer; }
+    .update-row { display: flex; gap: 12px; }
+    .update-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .update-icon.purple { background: linear-gradient(135deg, #715eed, #8b7bf0); }
+    .update-icon.coral { background: linear-gradient(135deg, #F97316, #FB923C); }
+    .update-text p { font-size: 14px; color: #1F2937; margin-bottom: 6px; }
+    .status-ok { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #10B981; }
+    #tasks-screen { padding: 0; }
+    .tasks-header-gradient { background: linear-gradient(135deg, #715eed, #8b7bf0) !important; padding: 60px 20px 24px; border-radius: 0 0 32px 32px; }
+    .tasks-header-top { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .team-info { display: flex; align-items: center; gap: 12px; }
+    .team-label { font-size: 13px; color: rgba(255,255,255,0.8); }
+    .sprint-label { font-size: 16px; font-weight: 600; color: white; }
+    .progress-section { color: white; }
+    .progress-text { display: flex; align-items: baseline; margin-bottom: 8px; }
+    .progress-number { font-size: 32px; font-weight: 700; }
+    .progress-label { font-size: 16px; opacity: 0.9; }
+    .progress-percent { margin-left: auto; font-size: 14px; font-weight: 600; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; }
+    .progress-bar { height: 8px; background: rgba(255,255,255,0.3); border-radius: 4px; margin-bottom: 8px; }
+    .progress-fill { height: 100%; background: #4ADE80; border-radius: 4px; width: 66%; }
+    .progress-note { font-size: 13px; opacity: 0.9; }
+    .task-filters { display: flex; gap: 8px; padding: 16px 20px; }
+    .filter-btn { padding: 8px 16px; background: white; border: 1px solid #E5E7EB; border-radius: 20px; font-size: 13px; color: #6B7280; cursor: pointer; }
+    .filter-btn.active { background: #1F2937; color: white; border-color: #1F2937; }
+    .tasks-content { padding: 0 20px 120px; }
+    .section-title { font-size: 14px; font-weight: 600; color: #6B7280; margin: 20px 0 12px; }
+    .task-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+    .task-card.urgent { border-left: 3px solid #EF4444; }
+    .task-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .task-card h3 { font-size: 17px; font-weight: 600; color: #1F2937; margin-bottom: 4px; }
+    .task-meta { font-size: 13px; color: #6B7280; }
+    .ai-suggestion-box { display: flex; align-items: center; gap: 10px; background: #F3F0F8; border-radius: 12px; padding: 10px 12px; margin: 12px 0; }
+    .ai-label-small { font-size: 11px; font-weight: 600; color: #715eed; }
+    .ai-message { font-size: 12px; color: #6B7280; }
+    .btn-small { padding: 6px 14px; background: white; border: 1px solid #715eed; border-radius: 8px; font-size: 12px; font-weight: 600; color: #715eed; cursor: pointer; }
+    .task-footer { display: flex; justify-content: space-between; margin-top: 12px; }
+    .assignees { display: flex; align-items: center; gap: 8px; }
+    .more-assignees { font-size: 12px; color: #6B7280; }
+    .deadline { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
+    .deadline.urgent { color: #EF4444; }
+    .fab { position: absolute; bottom: 100px; right: 20px; width: 56px; height: 56px; background: #1F2937; border: none; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3); z-index: 50; }
+    .bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; height: 85px; background: white; display: flex; justify-content: space-around; padding-top: 12px; border-top: 1px solid #F3F4F6; z-index: 100; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; padding: 4px 12px; border-radius: 12px; }
+    .nav-item span { font-size: 11px; color: #9CA3AF; }
+    .nav-item.active span { color: #715eed; font-weight: 600; }
+    .nav-item.active { background: #F3F0F8; }
+    .nav-item svg { fill: #9CA3AF; }
+    .nav-item.active svg { fill: #715eed; }
+    .header-avatar .avatar-circle { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #715eed, #8b7bf0); }
+    /* Modal styles */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+    .modal-overlay.show { opacity: 1; }
+    .modal { background: white; border-radius: 24px; width: 90%; max-width: 360px; max-height: 80vh; overflow: hidden; transform: scale(0.9); transition: transform 0.3s; }
+    .modal-overlay.show .modal { transform: scale(1); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #E5E7EB; }
+    .modal-header h2 { font-size: 18px; font-weight: 600; color: #1F2937; }
+    .modal-close { background: none; border: none; font-size: 24px; color: #6B7280; cursor: pointer; padding: 0; line-height: 1; }
+    .modal-content { padding: 20px; overflow-y: auto; max-height: calc(80vh - 60px); }
+    /* Toast styles */
+    .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1F2937; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 500; opacity: 0; transition: all 0.3s; z-index: 2000; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast-success { background: #10B981; }
+    .toast-error { background: #EF4444; }
+    .toast-info { background: #715eed; }
+    /* Animations */
+    .fade-out { animation: fadeOut 0.3s forwards; }
+    @keyframes fadeOut { to { opacity: 0; transform: translateX(100px); } }
+    .slide-up { animation: slideUp 0.3s forwards; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    /* Notification dropdown */
+    .notification-dropdown { position: absolute; top: 100%; right: 0; width: 280px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 200; display: none; }
+    .notification-dropdown.show { display: block; }
+    .notification-dropdown-header { padding: 12px 16px; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; }
+    .notification-dropdown-header h3 { font-size: 14px; font-weight: 600; }
+    .notification-item { padding: 12px 16px; border-bottom: 1px solid #F3F4F6; cursor: pointer; }
+    .notification-item:hover { background: #F9FAFB; }
+    .notification-item.unread { background: #F3F0F8; }
+    .notification-item p { font-size: 13px; color: #1F2937; margin-bottom: 4px; }
+    .notification-item span { font-size: 11px; color: #9CA3AF; }
+    /* Form styles */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 14px; font-family: inherit; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #715eed; }
+    .form-group textarea { resize: none; min-height: 80px; }
+    .btn-full { width: 100%; padding: 14px; background: linear-gradient(135deg, #F97316, #FB923C); border: none; border-radius: 12px; font-size: 15px; font-weight: 600; color: white; cursor: pointer; }
+    .btn-full:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline { width: 100%; padding: 14px; background: white; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 15px; font-weight: 600; color: #374151; cursor: pointer; margin-top: 8px; }
+    /* Checkbox styles */
+    .checkbox-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #F3F4F6; }
+    .checkbox-item:last-child { border-bottom: none; }
+    .checkbox-item input[type="checkbox"] { width: 20px; height: 20px; accent-color: #715eed; }
+    .checkbox-item.done span { text-decoration: line-through; color: #9CA3AF; }
+    /* Status badges */
+    .status-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    .status-todo { background: #F3F4F6; color: #6B7280; }
+    .status-in_progress { background: #E0E7FF; color: #4F46E5; }
+    .status-in_review { background: #FEF3C7; color: #D97706; }
+    .status-done { background: #D1FAE5; color: #059669; }
+    /* Team screen styles */
+    .team-member-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .team-member-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .member-info { flex: 1; }
+    .member-info h3 { font-size: 15px; font-weight: 600; color: #1F2937; }
+    .member-info p { font-size: 13px; color: #6B7280; }
+    .status-indicator { width: 10px; height: 10px; border-radius: 50%; }
+    .status-indicator.online { background: #10B981; }
+    .status-indicator.busy { background: #F59E0B; }
+    .status-indicator.offline { background: #9CA3AF; }
+    /* Search input */
+    .search-input { display: flex; align-items: center; background: white; border-radius: 12px; padding: 10px 14px; gap: 10px; margin-bottom: 16px; }
+    .search-input input { flex: 1; border: none; outline: none; font-size: 14px; }
+    /* Invitee toggle */
+    .invitee-toggle { display: flex; gap: 8px; }
+    .invitee-toggle button { padding: 6px 12px; border-radius: 8px; font-size: 12px; border: none; cursor: pointer; }
+    .invitee-toggle button.active { background: #715eed; color: white; }
+    .invitee-toggle button:not(.active) { background: #F3F4F6; color: #6B7280; }
+    /* Sidebar styles */
+    .sidebar-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 500; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .sidebar-overlay.show { opacity: 1; pointer-events: auto; }
+    .sidebar { position: absolute; top: 0; left: -280px; width: 280px; height: 100%; background: white; z-index: 501; transition: left 0.3s; padding: 60px 20px 20px; overflow-y: auto; }
+    .sidebar.show { left: 0; }
+    .sidebar-header { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #E5E7EB; }
+    .sidebar-logo { width: 40px; height: 40px; }
+    .sidebar-title { font-size: 18px; font-weight: 700; color: #1F2937; }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu-item { display: flex; align-items: center; gap: 14px; padding: 14px 12px; border-radius: 12px; cursor: pointer; margin-bottom: 4px; color: #4B5563; font-size: 15px; font-weight: 500; }
+    .sidebar-menu-item:hover { background: #F3F4F6; }
+    .sidebar-menu-item.active { background: #F3F0F8; color: #715eed; }
+    .sidebar-menu-item svg { width: 22px; height: 22px; }
+    .sidebar-divider { height: 1px; background: #E5E7EB; margin: 16px 0; }
+    .sidebar-section-title { font-size: 11px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; padding: 8px 12px; }
+    /* AI Chat styles */
+    .ai-chat-card { background: linear-gradient(135deg, #EDE9F5, #E8E0F5); border-radius: 16px; padding: 16px; margin-top: 16px; }
+    .ai-chat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .ai-chat-input { display: flex; gap: 8px; }
+    .ai-chat-input input { flex: 1; padding: 12px 16px; border: none; border-radius: 24px; background: white; font-size: 14px; }
+    .ai-chat-input button { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #715eed, #8b7bf0); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .chat-messages { max-height: 150px; overflow-y: auto; margin-bottom: 12px; }
+    .chat-message { padding: 10px 14px; border-radius: 16px; margin-bottom: 8px; font-size: 13px; }
+    .chat-message.ai { background: white; color: #1F2937; }
+    .chat-message.user { background: #715eed; color: white; margin-left: 40px; }
+    /* Profile screen */
+    .profile-header { text-align: center; padding: 20px 0; }
+    .profile-avatar-large { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #715eed, #8b7bf0); display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: 600; margin: 0 auto 12px; }
+    .profile-section { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+    .profile-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F3F4F6; }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-label { font-size: 13px; color: #6B7280; }
+    .profile-value { font-size: 14px; font-weight: 500; color: #1F2937; }
+    /* Team category */
+    .team-category { margin-bottom: 24px; }
+    .team-category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+    .team-category-title { font-size: 14px; font-weight: 600; color: #6B7280; text-transform: uppercase; }
+    .team-category-count { font-size: 12px; color: #9CA3AF; }
+    /* Agenda meeting cards */
+    .meeting-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: box-shadow 0.2s; }
+    .meeting-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .meeting-card.essential { border-left: 4px solid #10B981; }
+    .meeting-card.optional { border-left: 4px solid #9CA3AF; }
+    .meeting-time-slot { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .meeting-time-slot .time { font-size: 14px; font-weight: 600; color: #715eed; }
+    .meeting-time-slot .duration { font-size: 12px; color: #9CA3AF; }
+    .meeting-card h3 { font-size: 16px; font-weight: 600; color: #1F2937; margin-bottom: 4px; }
+    .meeting-card .meeting-meta { font-size: 13px; color: #6B7280; margin-bottom: 12px; }
+    .meeting-card .meeting-attendees { display: flex; align-items: center; gap: 8px; }
+    .meeting-type-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    .meeting-type-badge.essential-badge { background: #D1FAE5; color: #059669; }
+    .meeting-type-badge.optional-badge { background: #F3F4F6; color: #6B7280; }
+    .meeting-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .meeting-actions button { flex: 1; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-accept { background: #D1FAE5; color: #059669; }
+    .btn-decline { background: #FEE2E2; color: #DC2626; }
+    .btn-accepted { background: #10B981; color: white; }
+    .btn-declined { background: #9CA3AF; color: white; }
+    .day-header { display: flex; align-items: center; gap: 12px; margin: 20px 0 12px; }
+    .day-header .day-name { font-size: 16px; font-weight: 700; color: #1F2937; }
+    .day-header .day-date { font-size: 13px; color: #6B7280; }
+  </style>
+</head>
+<body class="bg-background-light font-display antialiased text-slate-800">
+  <!-- iPhone Frame (visible on desktop only) -->
+  <div class="iphone-frame">
+    <div class="iphone-screen">
+      <!-- Mobile Container -->
+      <div class="mobile-container">
+    <!-- Sidebar -->
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <img src="https://www.cellnex.com/app/uploads/2025/07/Odido-Logo.png" class="sidebar-logo" alt="Odido" style="height:32px;width:auto">
+        <span class="sidebar-title">Planner</span>
+      </div>
+      <div class="sidebar-menu">
+        <div class="sidebar-menu-item active" onclick="navigateTo('home');toggleSidebar()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</div>
+        <div class="sidebar-menu-item" onclick="navigateTo('agenda');toggleSidebar()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Agenda</div>
+        <div class="sidebar-menu-item" onclick="navigateTo('tasks');toggleSidebar()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Taken</div>
+        <div class="sidebar-menu-item" onclick="navigateTo('updates');toggleSidebar()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>Project Updates</div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section-title">Team & Account</div>
+        <div class="sidebar-menu-item" onclick="navigateTo('team');toggleSidebar()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Team</div>
+        <div class="sidebar-menu-item" onclick="openMyProfile();toggleSidebar()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Mijn Profiel</div>
+        <div class="sidebar-menu-item" onclick="openSettings();toggleSidebar()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>Instellingen</div>
+      </div>
+    </div>
+    <!-- Profile Screen -->
+    <div id="profile-screen" class="screen" style="padding:60px 20px 100px"></div>
+    <div id="home-screen" class="screen active">
+      <div class="top-logo-container"><img src="https://www.cellnex.com/app/uploads/2025/07/Odido-Logo.png" alt="Odido" class="top-logo"></div>
+      <div class="header"><div class="logo" onclick="toggleSidebar()" style="cursor:pointer"><div class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#715eed"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></div><span class="logo-text">Menu</span></div><div style="display:flex;align-items:center;gap:12px"><div class="notification-bell" onclick="toggleNotifications()" style="position:relative;cursor:pointer"><svg width="24" height="24" viewBox="0 0 24 24" fill="#1F2937"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span class="notification-dot"></span></div><div class="profile-avatar" onclick="openMyProfile()" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#715eed,#8b7bf0);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:600;cursor:pointer">JP</div></div></div>
+      <div class="greeting"><h1>Goedemorgen</h1><p class="date">Woensdag, 24 oktober</p></div>
+      <div class="stats-row">
+        <div class="stat-card" onclick="navigateTo('meeting')"><div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="#715eed"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div><div class="stat-number">2</div><div class="stat-label">meetings vandaag</div></div>
+        <div class="stat-card" onclick="navigateTo('tasks')"><div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="#715eed"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><div class="stat-number">4</div><div class="stat-label">open taken</div></div>
+      </div>
+      <div class="section-header"><svg width="20" height="20" viewBox="0 0 24 24" fill="#715eed"><path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/></svg><h2>AI Suggesties</h2></div>
+      <div class="suggestion-card"><span class="tag efficiency">EFFICIËNTIE</span><h3>Skip standup</h3><p>Geen actiepunten voor jou gevonden in de agenda. Gebruik de tijd voor deep work.</p><div class="suggestion-actions"><button class="btn-secondary">Afwijzen</button><button class="btn-primary">Accepteren</button></div></div>
+      <div class="suggestion-card deadline-card"><span class="tag deadline">DEADLINE</span><h3>Herinnering: Sales deck</h3><p>De deadline voor de presentatie is morgen om 09:00 uur.</p><div class="card-footer"><div style="display:flex"><div class="avatar" style="background:linear-gradient(135deg,#715eed,#8b7bf0);margin-left:0">JP</div><div class="avatar" style="background:linear-gradient(135deg,#88B04B,#88B04B99)">MB</div></div><span class="contributors">+2 werken hieraan</span><button class="link" onclick="navigateTo('tasks')">Bekijk taak</button></div></div>
+      <div class="ai-chat-card">
+        <div class="ai-chat-header">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#715eed"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+          <div><span style="font-size:14px;font-weight:600;color:#1F2937">Chat met je projecten</span><br><span style="font-size:12px;color:#6B7280">Stel vragen aan je AI assistent</span></div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-message ai">Hoi! Ik ben je AI assistent. Stel me vragen over je projecten.</div>
+        </div>
+        <div class="ai-chat-input">
+          <input type="text" id="ai-chat-input" placeholder="Vraag iets over je projecten..." onkeypress="if(event.key==='Enter')sendChatMessage()">
+          <button onclick="sendChatMessage()"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div id="meeting-screen" class="screen">
+      <div class="top-logo-container" style="padding-top:20px"><img src="https://www.cellnex.com/app/uploads/2025/07/Odido-Logo.png" alt="Odido" class="top-logo"></div>
+      <div class="header"><button class="back-btn" onclick="navigateTo('home')"><svg width="24" height="24" viewBox="0 0 24 24" fill="#1F2937"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><span class="header-title">Planner</span><div style="width:24px"></div></div>
+      <div class="meeting-title"><h1>Product Launch Kickoff</h1><div class="meeting-time"><svg width="16" height="16" viewBox="0 0 24 24" fill="#6B7280"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg><span>Maandag, 14 Okt • 10:00 - 11:00</span></div></div>
+      <div class="ai-analysis-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="#715eed"><path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/></svg><span class="ai-label">AI ANALYSE</span></div><div class="ai-analysis-content"><div class="ai-text"><h3>Project Status Check</h3><p>Ik heb de projectstatus geanalyseerd. Deze meeting is cruciaal.</p></div><div class="robot-image"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=odido&backgroundColor=c0aede" alt="AI"/></div></div><div class="disciplines"><span class="discipline-label">RELEVANTE DISCIPLINES</span><div class="discipline-tags"><span class="discipline-tag">Marketing</span><span class="discipline-tag">Content</span><span class="discipline-tag">Design</span><span class="discipline-tag">Product</span></div></div></div>
+      <div class="invitees-section"><div class="invitees-header"><h2>Genodigden (5)</h2><button class="edit-link" onclick="openEditInvitees()">Wijzig</button></div><div class="invitees-list">
+        <div class="invitee-row"><div class="avatar" style="width:44px;height:44px;font-size:14px;background:linear-gradient(135deg,#715eed,#8b7bf0);margin:0;border:0">SJ</div><div class="invitee-info"><span class="invitee-name">Sanne Janssen</span><span class="invitee-role">Lead Marketer</span></div><span class="badge essential">Essentieel</span></div>
+        <div class="invitee-row"><div class="avatar" style="width:44px;height:44px;font-size:14px;background:linear-gradient(135deg,#88B04B,#88B04B99);margin:0;border:0">TV</div><div class="invitee-info"><span class="invitee-name">Tom de Vries</span><span class="invitee-role">Product Owner</span></div><span class="badge essential">Essentieel</span></div>
+        <div class="invitee-row"><div class="avatar" style="width:44px;height:44px;font-size:14px;background:linear-gradient(135deg,#F7CAC9,#F7CAC999);margin:0;border:0">LB</div><div class="invitee-info"><span class="invitee-name">Lotte Bakker</span><span class="invitee-role">UX Designer</span></div><span class="badge essential">Essentieel</span></div>
+        <div class="invitee-row"><div class="avatar" style="width:44px;height:44px;font-size:14px;background:linear-gradient(135deg,#92A8D1,#92A8D199);margin:0;border:0">MV</div><div class="invitee-info"><span class="invitee-name">Mark Visser</span><span class="invitee-role">Copywriter</span></div><span class="badge optional">Optioneel</span></div>
+        <div class="invitee-row"><div class="avatar" style="width:44px;height:44px;font-size:14px;background:linear-gradient(135deg,#955251,#95525199);margin:0;border:0">SS</div><div class="invitee-info"><span class="invitee-name">Sophie Smit</span><span class="invitee-role">Strategist</span></div><span class="badge optional">Optioneel</span></div>
+      </div></div>
+      <div class="meeting-action"><button class="btn-send" onclick="sendInvitations()">Verstuur uitnodigingen <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button></div>
+    </div>
+    <!-- Agenda Screen (Meetings) -->
+    <div id="agenda-screen" class="screen" style="padding:60px 20px 100px"></div>
+    <!-- Project Updates Screen -->
+    <div id="updates-screen" class="screen" style="padding:60px 20px 100px"></div>
+    <div id="tasks-screen" class="screen">
+      <div class="tasks-header-gradient"><div class="tasks-header-top"><div class="team-info"><div class="avatar" style="width:40px;height:40px;font-size:14px;background:linear-gradient(135deg,#6B5B95,#6B5B9599);margin:0;border:2px solid rgba(255,255,255,0.3)">MT</div><div><span class="team-label">Marketing Team</span><br><span class="sprint-label">Sprint 24 ▼</span></div></div><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div><div class="progress-section"><div class="progress-text"><span class="progress-number">12</span><span class="progress-label"> van 18 taken</span><span class="progress-percent">66%</span></div><div class="progress-bar"><div class="progress-fill"></div></div><p class="progress-note">Je ligt op schema voor vrijdag.</p></div></div>
+      <div class="task-filters"><button class="filter-btn active" onclick="setTaskFilter('all')">Alles</button><button class="filter-btn" onclick="setTaskFilter('mine')">Mijn taken</button><button class="filter-btn" onclick="setTaskFilter('review')">In Review</button></div>
+      <div class="tasks-content"><h3 class="section-title">Vandaag</h3>
+        <div class="task-card urgent"><div class="task-header"><span class="tag urgent-tag">Urgent</span></div><h3>Q3 Campaign Launch</h3><p class="task-meta">Marketing • Final Assets</p><div class="ai-suggestion-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="#715eed"><circle cx="12" cy="12" r="10"/></svg><div style="flex:1"><span class="ai-label-small">AI suggestie</span><br><span class="ai-message">Mogelijke vertraging...</span></div><button class="btn-small">Actie</button></div><div class="task-footer"><div class="assignees"><div class="avatar" style="width:28px;height:28px;font-size:10px;background:linear-gradient(135deg,#B565A7,#B565A799);margin:0;border:0">AP</div><span class="more-assignees">+2</span></div><div class="deadline urgent"><svg width="14" height="14" viewBox="0 0 24 24" fill="#EF4444"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm.5 5v6l5 3-.75 1.2-4.5-2.7V7h.25z"/></svg><span>17:00 vandaag</span></div></div></div>
+        <h3 class="section-title">Morgen</h3>
+        <div class="task-card"><div class="task-header"><span class="tag progress-tag">In Progress</span></div><h3>Social Media Assets</h3><p class="task-meta">Design • Instagram</p></div>
+      </div>
+    </div>
+    <div id="team-screen" class="screen" style="padding:60px 20px 100px"></div>
+    <button class="fab" id="fab-btn" onclick="openNewTaskModal()"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+    <div class="bottom-nav" id="bottom-nav">
+      <button class="nav-item active" data-screen="home" onclick="navigateTo('home')"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></button>
+      <button class="nav-item" data-screen="agenda" onclick="navigateTo('agenda')"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg><span>Agenda</span></button>
+      <button class="nav-item" data-screen="tasks" onclick="navigateTo('tasks')"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Taken</span></button>
+      <button class="nav-item" data-screen="updates" onclick="navigateTo('updates')"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg><span>Updates</span></button>
+    </div>
+      </div><!-- end mobile-container -->
+    </div><!-- end iphone-screen -->
+  </div><!-- end iphone-frame -->
+  <button class="reset-btn" onclick="resetData()">Reset Prototype</button>
+  <script>
+    // ==================== DATA STRUCTURE ====================
+    const defaultData = {
+      users: [
+        { id: 1, name: 'Jelle Plass', initials: 'JP', role: 'Project Manager', color: '#715eed', status: 'online', projects: [1, 2], team: 'marketing' },
+        { id: 2, name: 'Sanne Janssen', initials: 'SJ', role: 'Lead Marketer', color: '#715eed', status: 'online', projects: [1], team: 'marketing' },
+        { id: 3, name: 'Tom de Vries', initials: 'TV', role: 'Product Owner', color: '#88B04B', status: 'busy', projects: [1, 2], team: 'product' },
+        { id: 4, name: 'Lotte Bakker', initials: 'LB', role: 'UX Designer', color: '#F7CAC9', status: 'online', projects: [2], team: 'design' },
+        { id: 5, name: 'Mark Visser', initials: 'MV', role: 'Copywriter', color: '#92A8D1', status: 'offline', projects: [1], team: 'content' },
+        { id: 6, name: 'Sophie Smit', initials: 'SS', role: 'Strategist', color: '#955251', status: 'online', projects: [1, 2], team: 'marketing' },
+        { id: 7, name: 'Anna Peters', initials: 'AP', role: 'Designer', color: '#B565A7', status: 'online', projects: [1], team: 'design' },
+        { id: 8, name: 'Milan Bakker', initials: 'MB', role: 'Developer', color: '#88B04B', status: 'busy', projects: [2], team: 'development' },
+        { id: 9, name: 'Eva Jansen', initials: 'EJ', role: 'Content Manager', color: '#E27D60', status: 'online', projects: [1], team: 'content' },
+        { id: 10, name: 'Lucas van Dam', initials: 'LD', role: 'Frontend Developer', color: '#41B3A3', status: 'online', projects: [2], team: 'development' },
+        { id: 11, name: 'Nina de Groot', initials: 'NG', role: 'Social Media', color: '#C38D9E', status: 'busy', projects: [1], team: 'marketing' },
+        { id: 12, name: 'Rick Mulder', initials: 'RM', role: 'Data Analyst', color: '#5D5C61', status: 'online', projects: [1, 2], team: 'product' },
+        { id: 13, name: 'Kim van Dijk', initials: 'KD', role: 'UI Designer', color: '#85CDCA', status: 'offline', projects: [2], team: 'design' },
+        { id: 14, name: 'Daan Hendriks', initials: 'DH', role: 'Backend Developer', color: '#557A95', status: 'online', projects: [2], team: 'development' },
+        { id: 15, name: 'Floor Willems', initials: 'FW', role: 'SEO Specialist', color: '#B1A296', status: 'online', projects: [1], team: 'content' },
+        { id: 16, name: 'Bram de Jong', initials: 'BJ', role: 'Account Manager', color: '#E8A87C', status: 'busy', projects: [1, 2], team: 'sales' },
+        { id: 17, name: 'Lisa Smeets', initials: 'LS', role: 'Sales Rep', color: '#C5CBE3', status: 'online', projects: [1], team: 'sales' },
+        { id: 18, name: 'Wouter Bakker', initials: 'WB', role: 'Sales Lead', color: '#9B2335', status: 'online', projects: [1, 2], team: 'sales' }
+      ],
+      teams: [
+        { id: 'marketing', name: 'Marketing Team', color: '#715eed' },
+        { id: 'design', name: 'Design Team', color: '#F7CAC9' },
+        { id: 'content', name: 'Content Team', color: '#92A8D1' },
+        { id: 'development', name: 'Development Team', color: '#88B04B' },
+        { id: 'product', name: 'Product Team', color: '#955251' },
+        { id: 'sales', name: 'Sales Team', color: '#E8A87C' }
+      ],
+      projects: [
+        { id: 1, name: 'Q4 Campaign', color: '#F97316', members: [1, 2, 3, 5, 7], progress: 66, description: 'Marketingcampagne voor Q4 met focus op productlancering en brand awareness.' },
+        { id: 2, name: 'Website Rebrand', color: '#715eed', members: [1, 3, 4, 6, 8], progress: 45, description: 'Complete redesign van de corporate website met nieuwe merkidentiteit.' },
+        { id: 3, name: 'Mobile App v2', color: '#10B981', members: [4, 8, 10, 14], progress: 30, description: 'Nieuwe versie van de mobiele app met verbeterde UX en nieuwe features.' },
+        { id: 4, name: 'Customer Portal', color: '#F59E0B', members: [3, 8, 10, 12], progress: 80, description: 'Self-service portaal voor klanten om hun account te beheren.' },
+        { id: 5, name: 'Analytics Platform', color: '#EF4444', members: [8, 12, 14], progress: 55, description: 'Intern analytics platform voor data-driven besluitvorming.' },
+        { id: 6, name: 'Partner Integration', color: '#8B5CF6', members: [3, 6, 16, 18], progress: 20, description: 'API integraties met strategische partners.' },
+        { id: 7, name: 'Employee Onboarding', color: '#EC4899', members: [2, 6, 9], progress: 90, description: 'Digitaal onboarding programma voor nieuwe medewerkers.' }
+      ],
+      tasks: [
+        { id: 1, title: 'Q3 Campaign Launch', description: 'Finalize all campaign assets and prepare for launch. Dit omvat het afronden van alle designs, copy en social media posts.', project: 1, assignees: [1, 7, 2, 3], creator: 3, createdAt: '3 dagen geleden', deadline: 'today', deadlineTime: '17:00', status: 'in_progress', priority: 'urgent', subtasks: [
+          { id: 1, text: 'Review final designs', done: true },
+          { id: 2, text: 'Approve copy', done: true },
+          { id: 3, text: 'Schedule social posts', done: false },
+          { id: 4, text: 'Send to stakeholders', done: false },
+          { id: 5, text: 'Prepare launch email', done: false }
+        ], comments: [{ user: 2, text: 'Designs are approved!', time: '2u geleden' }] },
+        { id: 2, title: 'Social Media Assets', description: 'Create Instagram and Facebook assets for the campaign. Inclusief story templates, feed posts en carousel designs.', project: 1, assignees: [1, 4, 7], creator: 2, createdAt: '5 dagen geleden', deadline: 'tomorrow', status: 'in_progress', priority: 'normal', subtasks: [
+          { id: 1, text: 'Instagram feed posts (6x)', done: true },
+          { id: 2, text: 'Instagram stories templates', done: true },
+          { id: 3, text: 'Facebook carousel', done: false },
+          { id: 4, text: 'LinkedIn visuals', done: false }
+        ], comments: [] },
+        { id: 3, title: 'Sales Deck Presentatie', description: 'Maak de Q4 sales presentatie af voor het management. Focus op ROI, KPIs en groeiprojecties.', project: 1, assignees: [1, 8], creator: 3, createdAt: '1 week geleden', deadline: 'tomorrow', deadlineTime: '09:00', status: 'in_progress', priority: 'high', subtasks: [
+          { id: 1, text: 'Slide 1-5 afmaken', done: true },
+          { id: 2, text: 'Data visualisaties toevoegen', done: false },
+          { id: 3, text: 'Review met team', done: false },
+          { id: 4, text: 'Final proofreading', done: false }
+        ], comments: [] },
+        { id: 4, title: 'Homepage Copy', description: 'Write compelling copy for the new homepage with clear CTAs and value proposition.', project: 2, assignees: [1, 5], creator: 6, createdAt: '2 weken geleden', deadline: 'today', status: 'done', priority: 'normal', subtasks: [], comments: [] },
+        { id: 5, title: 'User Research Analysis', description: 'Analyze user interviews and create comprehensive report with actionable insights.', project: 2, assignees: [1, 4, 6], creator: 4, createdAt: '1 week geleden', deadline: 'this_week', status: 'in_review', priority: 'normal', subtasks: [
+          { id: 1, text: 'Transcribe interviews', done: true },
+          { id: 2, text: 'Identify patterns', done: true },
+          { id: 3, text: 'Create persona updates', done: false }
+        ], comments: [] },
+        { id: 6, title: 'Brand Guidelines Update', description: 'Update brand guidelines document with new colors, typography and visual elements.', project: 2, assignees: [1, 4], creator: 4, createdAt: '4 dagen geleden', deadline: 'this_week', status: 'todo', priority: 'normal', subtasks: [
+          { id: 1, text: 'Update color palette', done: false },
+          { id: 2, text: 'Add new typography', done: false },
+          { id: 3, text: 'Create icon library', done: false }
+        ], comments: [] },
+        { id: 7, title: 'Email Templates', description: 'Design new email templates for campaign including welcome series and promotional emails.', project: 1, assignees: [1, 7, 4], creator: 6, createdAt: 'gisteren', deadline: 'this_week', status: 'todo', priority: 'normal', subtasks: [
+          { id: 1, text: 'Welcome email', done: false },
+          { id: 2, text: 'Promo email', done: false },
+          { id: 3, text: 'Newsletter template', done: false }
+        ], comments: [] },
+        { id: 8, title: 'Analytics Dashboard', description: 'Set up tracking and analytics dashboard for campaign performance monitoring.', project: 1, assignees: [1, 8], creator: 3, createdAt: '6 dagen geleden', deadline: 'this_week', status: 'in_progress', priority: 'normal', subtasks: [
+          { id: 1, text: 'Setup Google Analytics', done: true },
+          { id: 2, text: 'Create custom dashboard', done: false },
+          { id: 3, text: 'Configure conversion tracking', done: false }
+        ], comments: [] },
+        { id: 9, title: 'Content Calendar', description: 'Plan content for next month including blog posts, social media and email campaigns.', project: 1, assignees: [1, 2, 5], creator: 2, createdAt: '3 dagen geleden', deadline: 'later', status: 'todo', priority: 'normal', subtasks: [], comments: [] },
+        { id: 10, title: 'Video Script', description: 'Write script for product video highlighting key features and benefits.', project: 2, assignees: [1, 5, 6], creator: 6, createdAt: '4 dagen geleden', deadline: 'later', status: 'todo', priority: 'normal', subtasks: [], comments: [] },
+        { id: 11, title: 'Landing Page Design', description: 'Design landing page for campaign with A/B test variants.', project: 1, assignees: [1, 4, 7], creator: 4, createdAt: '5 dagen geleden', deadline: 'tomorrow', status: 'in_review', priority: 'high', subtasks: [
+          { id: 1, text: 'Hero section', done: true },
+          { id: 2, text: 'Feature blocks', done: true },
+          { id: 3, text: 'Testimonials', done: true },
+          { id: 4, text: 'CTA optimization', done: false }
+        ], comments: [] },
+        { id: 12, title: 'A/B Test Setup', description: 'Configure A/B tests for landing pages to optimize conversion rates.', project: 1, assignees: [1, 8, 3], creator: 8, createdAt: '2 dagen geleden', deadline: 'this_week', status: 'todo', priority: 'normal', subtasks: [], comments: [] },
+        { id: 13, title: 'Competitor Analysis', description: 'Research competitor campaigns and market positioning.', project: 1, assignees: [1, 6], creator: 6, createdAt: '2 weken geleden', deadline: 'later', status: 'done', priority: 'normal', subtasks: [], comments: [] },
+        { id: 14, title: 'Mobile App Wireframes', description: 'Create wireframes for mobile app redesign with focus on user experience.', project: 2, assignees: [1, 4], creator: 4, createdAt: '1 week geleden', deadline: 'this_week', status: 'in_progress', priority: 'normal', subtasks: [
+          { id: 1, text: 'Login flow', done: true },
+          { id: 2, text: 'Dashboard', done: false },
+          { id: 3, text: 'Profile screens', done: false }
+        ], comments: [] },
+        { id: 15, title: 'SEO Optimization', description: 'Optimize website pages for SEO including meta tags, content and technical SEO.', project: 2, assignees: [1, 5, 8], creator: 5, createdAt: '5 dagen geleden', deadline: 'later', status: 'todo', priority: 'normal', subtasks: [], comments: [] },
+        { id: 16, title: 'Press Release', description: 'Write press release for launch to send to media contacts.', project: 1, assignees: [1, 5, 2], creator: 2, createdAt: '1 week geleden', deadline: 'this_week', status: 'done', priority: 'normal', subtasks: [], comments: [] },
+        { id: 17, title: 'Partner Outreach', description: 'Contact potential partners for co-marketing opportunities.', project: 1, assignees: [1, 3, 6], creator: 3, createdAt: '3 dagen geleden', deadline: 'later', status: 'todo', priority: 'normal', subtasks: [], comments: [] },
+        { id: 18, title: 'Budget Review', description: 'Review and approve Q4 budget for marketing activities.', project: 1, assignees: [1, 3], creator: 3, createdAt: '2 dagen geleden', deadline: 'today', status: 'in_review', priority: 'urgent', subtasks: [
+          { id: 1, text: 'Review line items', done: true },
+          { id: 2, text: 'Compare with Q3', done: false },
+          { id: 3, text: 'Get stakeholder approval', done: false }
+        ], comments: [] }
+      ],
+      meetings: [
+        { id: 1, title: 'Product Launch Kickoff', date: 'today', time: '10:00', duration: 60, location: 'Vergaderzaal A', attendees: [2, 3, 4, 5, 6], essential: [2, 3, 4], optional: [5, 6], isEssentialForMe: true, myResponse: 'accepted', description: 'Kickoff meeting voor de Q4 product launch. We bespreken de roadmap en verdelen taken.' },
+        { id: 2, title: 'Weekly Standup', date: 'today', time: '09:00', duration: 15, location: 'Online (Teams)', attendees: [1, 2, 3, 7], essential: [1, 2, 3], optional: [7], isEssentialForMe: true, myResponse: 'accepted', description: 'Korte dagelijkse standup om voortgang te delen.' },
+        { id: 3, title: 'Design Review', date: 'today', time: '14:00', duration: 45, location: 'Vergaderzaal B', attendees: [4, 7, 1], essential: [4, 7], optional: [1], isEssentialForMe: false, myResponse: null, description: 'Review van de nieuwe homepage designs met het design team.' },
+        { id: 4, title: 'Budget Planning Q1', date: 'today', time: '16:00', duration: 60, location: 'Online (Teams)', attendees: [3, 6, 1], essential: [3], optional: [6, 1], isEssentialForMe: false, myResponse: null, description: 'Planningssessie voor het Q1 budget met finance.' },
+        { id: 5, title: 'Sprint Planning', date: 'tomorrow', time: '10:00', duration: 90, location: 'Vergaderzaal A', attendees: [1, 2, 3, 4, 7, 8], essential: [1, 2, 3], optional: [4, 7, 8], isEssentialForMe: true, myResponse: 'accepted', description: 'Planning voor Sprint 25. We bepalen de scope en verdelen user stories.' },
+        { id: 6, title: 'Client Presentatie', date: 'tomorrow', time: '14:30', duration: 60, location: 'Externe locatie', attendees: [1, 2, 6], essential: [1, 2], optional: [6], isEssentialForMe: true, myResponse: 'accepted', description: 'Presentatie van het Q4 Campaign concept aan de klant.' },
+        { id: 7, title: 'Team Borrel', date: 'tomorrow', time: '17:00', duration: 120, location: 'Cafe de Kroeg', attendees: [1, 2, 3, 4, 5, 6, 7, 8], essential: [], optional: [1, 2, 3, 4, 5, 6, 7, 8], isEssentialForMe: false, myResponse: null, description: 'Informele teamborrel om het einde van de sprint te vieren.' },
+        { id: 8, title: 'Retrospective', date: 'this_week', time: '15:00', duration: 60, location: 'Vergaderzaal C', attendees: [1, 2, 3, 4, 7], essential: [1, 2, 3], optional: [4, 7], isEssentialForMe: true, myResponse: 'accepted', description: 'Sprint retrospective om te reflecteren op wat goed ging en wat beter kan.' }
+      ],
+      updates: [
+        { id: 1, type: 'action_required', title: 'Actie vereist: Budget Q4', description: 'De budgetaanvraag van €15.000 voor influencer marketing wacht op jouw goedkeuring. Tom de Vries heeft deze aanvraag ingediend voor de Q4 campagne.', project: 1, time: '10m geleden', day: 'today', read: false, urgent: true, forYou: true, details: { amount: '€15.000', requester: 3, category: 'Influencer Marketing' } },
+        { id: 2, type: 'info', title: 'Homepage copy is afgerond', description: 'Mark Visser heeft alle homepage teksten afgerond en klaargezet voor review. De copy bevat de nieuwe merkpositionering en call-to-actions voor de productpaginas.', project: 2, time: '1u geleden', day: 'today', read: false, urgent: false, forYou: true, details: { author: 5, wordCount: 2500, sections: 8 } },
+        { id: 3, type: 'mention', title: 'Je bent genoemd in een discussie', description: 'Sanne Janssen heeft je genoemd in de discussie over de social media strategie: "@Jelle kun je de engagement metrics van vorige maand delen?"', project: 1, time: '2u geleden', day: 'today', read: true, urgent: false, forYou: true, details: { mentionedBy: 2, context: 'Social media strategie discussie' } },
+        { id: 4, type: 'deadline', title: 'Deadline nadert: Sales Deck', description: 'De Sales Deck presentatie moet morgen om 09:00 klaar zijn voor het management. Er zijn nog 2 slides die afgemaakt moeten worden.', project: 1, time: '3u geleden', day: 'today', read: true, urgent: false, forYou: true, details: { dueDate: 'Morgen 09:00', remainingTasks: 2 } },
+        { id: 5, type: 'approval', title: 'Landing page designs goedgekeurd', description: 'Lotte Bakker heeft alle 5 landing page designs goedgekeurd voor de Q4 campagne. De designs kunnen nu naar development voor implementatie.', project: 1, time: '4u geleden', day: 'today', read: true, urgent: false, forYou: true, details: { approver: 4, designCount: 5, nextStep: 'Development' } },
+        { id: 6, type: 'comment', title: 'Nieuwe comment op Social Media Assets', description: 'Tom de Vries heeft gereageerd: "De Instagram visuals zien er goed uit! Kunnen we ook een versie maken voor LinkedIn?"', project: 1, time: '5u geleden', day: 'today', read: true, urgent: false, forYou: false, details: { commenter: 3, taskId: 2 } },
+        { id: 7, type: 'task', title: 'Nieuwe taak toegewezen', description: 'Je bent toegewezen aan "Email Templates" door Sophie Smit. De taak bevat het ontwerpen van 3 email templates voor de nieuwsbrief campagne.', project: 1, time: 'gisteren 16:30', day: 'yesterday', read: true, urgent: false, forYou: true, details: { assignedBy: 6, taskId: 7, deliverables: 3 } },
+        { id: 8, type: 'info', title: 'Sprint review gepland', description: 'De sprint review voor Sprint 24 staat gepland voor vrijdag 15:00 in Vergaderzaal A. Alle teamleden worden verwacht om hun voortgang te presenteren.', project: 1, time: 'gisteren 14:00', day: 'yesterday', read: true, urgent: false, forYou: false, details: { date: 'Vrijdag 15:00', location: 'Vergaderzaal A' } },
+        { id: 9, type: 'milestone', title: 'Milestone bereikt: 50% voltooid!', description: 'Het Website Rebrand project heeft de 50% milestone bereikt! 9 van de 18 taken zijn afgerond. Het team ligt op schema voor de deadline van volgende maand.', project: 2, time: 'gisteren 11:00', day: 'yesterday', read: true, urgent: false, forYou: false, details: { completedTasks: 9, totalTasks: 18, progress: 50 } },
+        { id: 10, type: 'comment', title: 'Feedback op contentstrategie', description: 'Sophie Smit heeft uitgebreide feedback gegeven op het strategiedocument. Ze suggereert om meer focus te leggen op video content en interactieve elementen.', project: 2, time: 'gisteren 10:00', day: 'yesterday', read: true, urgent: false, forYou: true, details: { commenter: 6, feedbackPoints: 5 } },
+        { id: 11, type: 'deadline', title: 'Deadline verlengd', description: 'De deadline voor Brand Guidelines is verschoven van deze week naar volgende week vrijdag. Dit geeft het team extra tijd voor de kleurcalibratie.', project: 2, time: 'gisteren 09:00', day: 'yesterday', read: true, urgent: false, forYou: false, details: { oldDeadline: 'Deze week', newDeadline: 'Volgende week vrijdag', reason: 'Extra tijd voor kleurcalibratie' } },
+        { id: 12, type: 'info', title: 'Nieuw teamlid toegevoegd', description: 'Milan Bakker (Backend Developer) is toegevoegd aan het Website Rebrand project. Hij zal zich focussen op de CMS integratie en performance optimalisatie.', project: 2, time: 'eergisteren', day: 'earlier', read: true, urgent: false, forYou: false, details: { newMember: 8, role: 'Backend Developer', focus: 'CMS & Performance' } },
+        { id: 13, type: 'task', title: 'Taak afgerond door teamlid', description: 'Anna Peters heeft de Q3 visuals succesvol afgerond. Alle 12 visuals zijn goedgekeurd en klaar voor publicatie op social media kanalen.', project: 1, time: 'eergisteren', day: 'earlier', read: true, urgent: false, forYou: false, details: { completedBy: 7, deliverables: 12 } },
+        { id: 14, type: 'approval', title: 'Social media content goedgekeurd', description: 'De complete social media content planning voor oktober is goedgekeurd door het marketing team. Dit omvat 24 posts verdeeld over Instagram, LinkedIn en Twitter.', project: 1, time: 'eergisteren', day: 'earlier', read: true, urgent: false, forYou: true, details: { postCount: 24, platforms: ['Instagram', 'LinkedIn', 'Twitter'] } },
+        { id: 15, type: 'meeting', title: 'Kickoff meeting notities beschikbaar', description: 'De notities van de Product Launch Kickoff meeting zijn nu beschikbaar in het gedeelde document. Belangrijkste actiepunten en beslissingen zijn samengevat.', project: 1, time: 'eergisteren', day: 'earlier', read: true, urgent: false, forYou: false, details: { meetingId: 1, actionItems: 8 } }
+      ],
+      suggestions: [
+        { id: 1, type: 'efficiency', title: 'Skip standup', description: 'Geen actiepunten voor jou gevonden in de agenda. Gebruik de tijd voor deep work.', active: true },
+        { id: 2, type: 'focus', title: 'Focus tijd blokkeren', description: 'Je hebt 3 uur geen meetings. Wil je dit blok beschermen?', active: false }
+      ],
+      notifications: [
+        { id: 1, text: 'Sanne heeft een comment geplaatst', time: '5m', read: false, type: 'comment', details: { taskId: 2, user: 2, comment: 'De Instagram visuals zien er goed uit! Kunnen we ook een versie maken voor LinkedIn?' } },
+        { id: 2, text: 'Budget review wacht op goedkeuring', time: '10m', read: false, type: 'action', details: { updateId: 1, action: 'approve' } },
+        { id: 3, text: 'Sales deck deadline morgen', time: '1u', read: true, type: 'deadline', details: { taskId: 3, deadline: 'Morgen 09:00' } },
+        { id: 4, text: 'Je bent toegewezen aan Email Templates', time: '2u', read: true, type: 'assignment', details: { taskId: 7, assignedBy: 6 } },
+        { id: 5, text: 'Design Review meeting om 14:00', time: '3u', read: true, type: 'meeting', details: { meetingId: 3 } }
+      ]
+    };
+
+    // Load or initialize data
+    let appData = JSON.parse(localStorage.getItem('odidoData')) || JSON.parse(JSON.stringify(defaultData));
+    function saveData() { localStorage.setItem('odidoData', JSON.stringify(appData)); }
+    function resetData() { appData = JSON.parse(JSON.stringify(defaultData)); saveData(); location.reload(); }
+
+    // ==================== UTILITY FUNCTIONS ====================
+    function showToast(message, type = 'success') {
+      const existing = document.querySelector('.toast');
+      if (existing) existing.remove();
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-' + type;
+      toast.innerHTML = '<span>' + message + '</span>';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+
+    function getUser(id) { return appData.users.find(u => u.id === id); }
+    function getProject(id) { return appData.projects.find(p => p.id === id); }
+
+    function renderAvatar(user, size = 28) {
+      return '<div class="avatar" style="width:' + size + 'px;height:' + size + 'px;font-size:' + (size * 0.4) + 'px;background:linear-gradient(135deg,' + user.color + ',' + user.color + '99);margin:0;border:0">' + user.initials + '</div>';
+    }
+
+    // ==================== NAVIGATION ====================
+    function navigateTo(screen) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(screen + '-screen');
+      if (target) { target.classList.add('active'); target.scrollTop = 0; }
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      const nav = document.querySelector('.nav-item[data-screen="' + screen + '"]');
+      if (nav) nav.classList.add('active');
+      const bottomNav = document.getElementById('bottom-nav');
+      const fab = document.getElementById('fab-btn');
+      if (screen === 'meeting') { bottomNav.style.display = 'none'; fab.style.display = 'none'; }
+      else { bottomNav.style.display = 'flex'; fab.style.display = screen === 'tasks' ? 'flex' : 'none'; }
+      if (screen === 'tasks') renderTasks();
+      if (screen === 'team') renderTeam();
+      if (screen === 'home') renderHome();
+      if (screen === 'agenda') renderAgenda();
+      if (screen === 'updates') renderUpdates();
+      // Update sidebar active state
+      document.querySelectorAll('.sidebar-menu-item').forEach(item => item.classList.remove('active'));
+      const sidebarItem = document.querySelector('.sidebar-menu-item[onclick*="' + screen + '"]');
+      if (sidebarItem) sidebarItem.classList.add('active');
+    }
+
+    // ==================== MODAL SYSTEM ====================
+    function openModal(content, title = '') {
+      closeModal();
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = '<div class="modal"><div class="modal-header"><h2>' + title + '</h2><button class="modal-close" onclick="closeModal()">&times;</button></div><div class="modal-content">' + content + '</div></div>';
+      document.body.appendChild(modal);
+      setTimeout(() => modal.classList.add('show'), 10);
+      modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    }
+
+    function closeModal() {
+      const modal = document.querySelector('.modal-overlay');
+      if (modal) { modal.classList.remove('show'); setTimeout(() => modal.remove(), 300); }
+    }
+
+    // ==================== NOTIFICATION SYSTEM ====================
+    function updateNotificationBadge() {
+      const unread = appData.notifications.filter(n => !n.read).length;
+      document.querySelectorAll('.notification-dot').forEach(dot => {
+        dot.style.display = unread > 0 ? 'block' : 'none';
+      });
+    }
+
+    function toggleNotifications() {
+      let dropdown = document.querySelector('.notification-dropdown');
+      if (dropdown) { dropdown.remove(); return; }
+      const bell = document.querySelector('.notification-bell');
+      dropdown = document.createElement('div');
+      dropdown.className = 'notification-dropdown show';
+      let html = '<div class="notification-dropdown-header"><h3>Notificaties</h3><button onclick="markAllRead()" style="background:none;border:none;color:#715eed;font-size:12px;cursor:pointer">Alles gelezen</button></div>';
+      appData.notifications.forEach(n => {
+        const icon = getNotificationIcon(n.type);
+        html += `<div class="notification-item ${n.read ? '' : 'unread'}" onclick="openNotificationDetail(${n.id})">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="width:32px;height:32px;border-radius:8px;background:${n.read ? '#F3F4F6' : '#F3F0F8'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${icon}</div>
+            <div style="flex:1;min-width:0">
+              <p style="font-size:13px;color:#1F2937;margin:0 0 4px;${n.read ? '' : 'font-weight:500'}">${n.text}</p>
+              <span style="font-size:11px;color:#9CA3AF">${n.time} geleden</span>
+            </div>
+          </div>
+        </div>`;
+      });
+      dropdown.innerHTML = html;
+      bell.appendChild(dropdown);
+    }
+
+    function getNotificationIcon(type) {
+      const icons = {
+        comment: '<svg width="16" height="16" viewBox="0 0 24 24" fill="#715eed"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>',
+        action: '<svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>',
+        deadline: '<svg width="16" height="16" viewBox="0 0 24 24" fill="#EF4444"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm.5 5v6l5 3-.75 1.2-4.5-2.7V7h.25z"/></svg>',
+        assignment: '<svg width="16" height="16" viewBox="0 0 24 24" fill="#10B981"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1z"/></svg>',
+        meeting: '<svg width="16" height="16" viewBox="0 0 24 24" fill="#715eed"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>'
+      };
+      return icons[type] || icons.comment;
+    }
+
+    function markAllRead() {
+      appData.notifications.forEach(n => n.read = true);
+      saveData(); updateNotificationBadge();
+      document.querySelector('.notification-dropdown').remove();
+      showToast('Alle notificaties gelezen', 'info');
+    }
+
+    function readNotification(id) {
+      const n = appData.notifications.find(x => x.id === id);
+      if (n) n.read = true;
+      saveData(); updateNotificationBadge();
+    }
+
+    function openNotificationDetail(id) {
+      const n = appData.notifications.find(x => x.id === id);
+      if (!n) return;
+
+      // Mark as read
+      n.read = true;
+      saveData();
+      updateNotificationBadge();
+
+      // Close dropdown
+      const dropdown = document.querySelector('.notification-dropdown');
+      if (dropdown) dropdown.remove();
+
+      // Show detail based on type
+      let html = '';
+      switch (n.type) {
+        case 'comment':
+          const commentUser = n.details.user ? getUser(n.details.user) : null;
+          const commentTask = n.details.taskId ? appData.tasks.find(t => t.id === n.details.taskId) : null;
+          html = `
+            <div style="padding:16px;background:#F9FAFB;border-radius:12px;margin-bottom:16px">
+              ${commentUser ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">${renderAvatar(commentUser, 36)}<div><strong style="font-size:14px">${commentUser.name}</strong><br><span style="font-size:12px;color:#6B7280">${n.time} geleden</span></div></div>` : ''}
+              <p style="font-size:14px;color:#1F2937;line-height:1.5;margin:0">"${n.details.comment || n.text}"</p>
+            </div>
+            ${commentTask ? `<p style="font-size:13px;color:#6B7280;margin-bottom:16px">Op taak: <strong>${commentTask.title}</strong></p><button class="btn-full" onclick="closeModal();openTaskDetail(${commentTask.id})">Bekijk taak</button>` : ''}
+          `;
+          openModal(html, 'Comment');
+          break;
+
+        case 'action':
+          const update = n.details.updateId ? appData.updates.find(u => u.id === n.details.updateId) : null;
+          if (update) {
+            html = `
+              <div style="padding:16px;background:#FEF3C7;border-radius:12px;margin-bottom:16px;border-left:4px solid #F59E0B">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#F59E0B"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                  <span style="font-size:14px;font-weight:600;color:#92400E">Actie vereist</span>
+                </div>
+                <h3 style="font-size:16px;margin-bottom:8px">${update.title}</h3>
+                <p style="font-size:13px;color:#6B7280">${update.description}</p>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn-outline" style="flex:1" onclick="closeModal();showToast('Afgewezen', 'info')">Afwijzen</button>
+                <button class="btn-full" style="flex:1" onclick="closeModal();showToast('Goedgekeurd!', 'success')">Goedkeuren</button>
+              </div>
+            `;
+          }
+          openModal(html, 'Actie vereist');
+          break;
+
+        case 'deadline':
+          const deadlineTask = n.details.taskId ? appData.tasks.find(t => t.id === n.details.taskId) : null;
+          if (deadlineTask) {
+            html = `
+              <div style="padding:16px;background:#FEE2E2;border-radius:12px;margin-bottom:16px;border-left:4px solid #EF4444">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#EF4444"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm.5 5v6l5 3-.75 1.2-4.5-2.7V7h.25z"/></svg>
+                  <span style="font-size:14px;font-weight:600;color:#DC2626">Deadline nadert</span>
+                </div>
+                <h3 style="font-size:16px;margin-bottom:8px">${deadlineTask.title}</h3>
+                <p style="font-size:13px;color:#6B7280">Deadline: ${n.details.deadline || 'Binnenkort'}</p>
+              </div>
+              <button class="btn-full" onclick="closeModal();openTaskDetail(${deadlineTask.id})">Bekijk taak</button>
+            `;
+          }
+          openModal(html, 'Deadline Herinnering');
+          break;
+
+        case 'assignment':
+          const assignedTask = n.details.taskId ? appData.tasks.find(t => t.id === n.details.taskId) : null;
+          const assignedBy = n.details.assignedBy ? getUser(n.details.assignedBy) : null;
+          if (assignedTask) {
+            html = `
+              <div style="padding:16px;background:#D1FAE5;border-radius:12px;margin-bottom:16px;border-left:4px solid #10B981">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#10B981"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1z"/></svg>
+                  <span style="font-size:14px;font-weight:600;color:#059669">Nieuwe toewijzing</span>
+                </div>
+                <h3 style="font-size:16px;margin-bottom:8px">${assignedTask.title}</h3>
+                ${assignedBy ? `<p style="font-size:13px;color:#6B7280">Toegewezen door ${assignedBy.name}</p>` : ''}
+              </div>
+              <button class="btn-full" onclick="closeModal();openTaskDetail(${assignedTask.id})">Bekijk taak</button>
+            `;
+          }
+          openModal(html, 'Taak Toegewezen');
+          break;
+
+        case 'meeting':
+          const meeting = n.details.meetingId ? appData.meetings.find(m => m.id === n.details.meetingId) : null;
+          if (meeting) {
+            const endTime = calculateEndTime(meeting.time, meeting.duration);
+            html = `
+              <div style="padding:16px;background:#F3F0F8;border-radius:12px;margin-bottom:16px;border-left:4px solid #715eed">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#715eed"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                  <span style="font-size:14px;font-weight:600;color:#715eed">Meeting Herinnering</span>
+                </div>
+                <h3 style="font-size:16px;margin-bottom:8px">${meeting.title}</h3>
+                <p style="font-size:13px;color:#6B7280">${meeting.time} - ${endTime} • ${meeting.location}</p>
+              </div>
+              <button class="btn-full" onclick="closeModal();openMeetingDetail(${meeting.id})">Bekijk meeting</button>
+            `;
+          }
+          openModal(html, 'Meeting');
+          break;
+
+        default:
+          showToast(n.text, 'info');
+      }
+    }
+
+    // ==================== HOME SCREEN ====================
+    function renderHome() {
+      const openTasks = appData.tasks.filter(t => t.status !== 'done').length;
+      const meetings = appData.meetings.length;
+      const suggestions = appData.suggestions.filter(s => s.active);
+
+      let suggestionsHtml = suggestions.map(s => `
+        <div class="suggestion-card slide-up" id="suggestion-${s.id}">
+          <span class="tag ${s.type === 'efficiency' ? 'efficiency' : 'progress-tag'}">${s.type.toUpperCase()}</span>
+          <h3>${s.title}</h3>
+          <p>${s.description}</p>
+          <div class="suggestion-actions">
+            <button class="btn-secondary" onclick="dismissSuggestion(${s.id})">Afwijzen</button>
+            <button class="btn-primary" onclick="acceptSuggestion(${s.id})">Accepteren</button>
+          </div>
+        </div>
+      `).join('');
+
+      const salesTask = appData.tasks.find(t => t.id === 3);
+      const deadlineHtml = salesTask ? `
+        <div class="suggestion-card deadline-card slide-up">
+          <span class="tag deadline">DEADLINE</span>
+          <h3>Herinnering: ${salesTask.title}</h3>
+          <p>De deadline is ${salesTask.deadline === 'tomorrow' ? 'morgen' : 'vandaag'} om ${salesTask.deadlineTime || '17:00'} uur.</p>
+          <div class="card-footer">
+            <div style="display:flex">${salesTask.assignees.slice(0,2).map(id => renderAvatar(getUser(id), 28)).join('')}</div>
+            <span class="contributors">+${salesTask.assignees.length} werken hieraan</span>
+            <button class="link" onclick="openTaskDetail(${salesTask.id})">Bekijk taak</button>
+          </div>
+        </div>
+      ` : '';
+
+      document.querySelector('#home-screen .stats-row .stat-card:last-child .stat-number').textContent = openTasks;
+
+      const aiSection = document.querySelector('#home-screen .section-header');
+      if (aiSection) {
+        let container = aiSection.nextElementSibling;
+        while (container && container.classList.contains('suggestion-card')) {
+          const next = container.nextElementSibling;
+          container.remove();
+          container = next;
+        }
+        aiSection.insertAdjacentHTML('afterend', suggestionsHtml + deadlineHtml);
+      }
+    }
+
+    function dismissSuggestion(id) {
+      const card = document.getElementById('suggestion-' + id);
+      if (card) {
+        card.classList.add('fade-out');
+        setTimeout(() => {
+          card.remove();
+          appData.suggestions.find(s => s.id === id).active = false;
+          saveData();
+          showToast('Suggestie afgewezen', 'info');
+          checkNewSuggestion();
+        }, 300);
+      }
+    }
+
+    function acceptSuggestion(id) {
+      const card = document.getElementById('suggestion-' + id);
+      if (card) {
+        card.classList.add('fade-out');
+        setTimeout(() => {
+          card.remove();
+          appData.suggestions.find(s => s.id === id).active = false;
+          saveData();
+          showToast('Suggestie geaccepteerd!', 'success');
+          checkNewSuggestion();
+        }, 300);
+      }
+    }
+
+    function checkNewSuggestion() {
+      const inactive = appData.suggestions.find(s => !s.active);
+      if (inactive && Math.random() > 0.5) {
+        setTimeout(() => {
+          inactive.active = true;
+          saveData();
+          renderHome();
+          showToast('Nieuwe AI suggestie beschikbaar', 'info');
+        }, 2000);
+      }
+    }
+
+    // ==================== MEETING SCREEN ====================
+    function sendInvitations() {
+      const btn = document.querySelector('.btn-send');
+      btn.innerHTML = '<span>Verstuurd!</span> <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+      btn.style.background = '#10B981';
+      showToast('Uitnodigingen verstuurd!', 'success');
+      setTimeout(() => {
+        btn.innerHTML = 'Verstuur uitnodigingen <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>';
+        btn.style.background = '#1F2937';
+      }, 3000);
+    }
+
+    function openEditInvitees() {
+      const meeting = appData.meetings[0];
+      let html = '<div class="search-input"><svg width="20" height="20" viewBox="0 0 24 24" fill="#9CA3AF"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><input type="text" placeholder="Zoek teamleden..." oninput="filterInvitees(this.value)"></div>';
+      html += '<div id="invitee-list">';
+      appData.users.forEach(u => {
+        const isEssential = meeting.essential.includes(u.id);
+        const isOptional = meeting.optional.includes(u.id);
+        const isAttendee = isEssential || isOptional;
+        html += `<div class="invitee-row" data-name="${u.name.toLowerCase()}">
+          ${renderAvatar(u, 40)}
+          <div class="invitee-info"><span class="invitee-name">${u.name}</span><span class="invitee-role">${u.role}</span></div>
+          <div class="invitee-toggle">
+            <button class="${isEssential ? 'active' : ''}" onclick="setAttendeeType(${u.id}, 'essential')">Essentieel</button>
+            <button class="${isOptional ? 'active' : ''}" onclick="setAttendeeType(${u.id}, 'optional')">Optioneel</button>
+            ${isAttendee ? '<button onclick="removeAttendee(' + u.id + ')">X</button>' : ''}
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+      openModal(html, 'Wijzig genodigden');
+    }
+
+    function filterInvitees(query) {
+      document.querySelectorAll('#invitee-list .invitee-row').forEach(row => {
+        row.style.display = row.dataset.name.includes(query.toLowerCase()) ? 'flex' : 'none';
+      });
+    }
+
+    function setAttendeeType(userId, type) {
+      const meeting = appData.meetings[0];
+      meeting.essential = meeting.essential.filter(id => id !== userId);
+      meeting.optional = meeting.optional.filter(id => id !== userId);
+      if (type === 'essential') meeting.essential.push(userId);
+      else meeting.optional.push(userId);
+      meeting.attendees = [...meeting.essential, ...meeting.optional];
+      saveData();
+      openEditInvitees();
+      updateInviteesList();
+    }
+
+    function removeAttendee(userId) {
+      const meeting = appData.meetings[0];
+      meeting.essential = meeting.essential.filter(id => id !== userId);
+      meeting.optional = meeting.optional.filter(id => id !== userId);
+      meeting.attendees = [...meeting.essential, ...meeting.optional];
+      saveData();
+      openEditInvitees();
+      updateInviteesList();
+      showToast('Genodigde verwijderd', 'info');
+    }
+
+    function updateInviteesList() {
+      const meeting = appData.meetings[0];
+      const list = document.querySelector('.invitees-list');
+      if (!list) return;
+      let html = '';
+      [...meeting.essential, ...meeting.optional].forEach(id => {
+        const u = getUser(id);
+        const isEssential = meeting.essential.includes(id);
+        html += `<div class="invitee-row">${renderAvatar(u, 44)}<div class="invitee-info"><span class="invitee-name">${u.name}</span><span class="invitee-role">${u.role}</span></div><span class="badge ${isEssential ? 'essential' : 'optional'}">${isEssential ? 'Essentieel' : 'Optioneel'}</span></div>`;
+      });
+      list.innerHTML = html;
+      document.querySelector('.invitees-header h2').textContent = 'Genodigden (' + meeting.attendees.length + ')';
+    }
+
+    // ==================== AGENDA SCREEN ====================
+    let currentAgendaTab = 'today';
+
+    function renderAgenda() {
+      const screen = document.getElementById('agenda-screen');
+      if (!screen) return;
+
+      const todayMeetings = appData.meetings.filter(m => m.date === 'today').sort((a, b) => a.time.localeCompare(b.time));
+      const tomorrowMeetings = appData.meetings.filter(m => m.date === 'tomorrow').sort((a, b) => a.time.localeCompare(b.time));
+      const laterMeetings = appData.meetings.filter(m => m.date === 'this_week' || m.date === 'later').sort((a, b) => a.time.localeCompare(b.time));
+
+      let html = `
+        <div class="top-logo-container"><img src="https://www.cellnex.com/app/uploads/2025/07/Odido-Logo.png" alt="Odido" class="top-logo"></div>
+        <div class="header">
+          <div class="logo" onclick="toggleSidebar()" style="cursor:pointer">
+            <div class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#715eed"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></div>
+            <span class="logo-text">Menu</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="notification-bell" onclick="toggleNotifications()" style="position:relative;cursor:pointer">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#1F2937"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+              <span class="notification-dot"></span>
+            </div>
+            <div class="profile-avatar" onclick="openMyProfile()" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#715eed,#8b7bf0);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:600;cursor:pointer">JP</div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab ${currentAgendaTab === 'today' ? 'active' : ''}" onclick="switchAgendaTab('today')">Vandaag (${todayMeetings.length})</button>
+          <button class="tab ${currentAgendaTab === 'week' ? 'active' : ''}" onclick="switchAgendaTab('week')">Deze week</button>
+        </div>
+      `;
+
+      if (currentAgendaTab === 'today') {
+        if (todayMeetings.length === 0) {
+          html += '<div style="text-align:center;padding:40px 20px;color:#9CA3AF"><svg width="48" height="48" viewBox="0 0 24 24" fill="#E5E7EB" style="margin-bottom:12px"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg><p>Geen meetings vandaag</p></div>';
+        } else {
+          html += '<div class="day-header"><span class="day-name">Vandaag</span><span class="day-date">Woensdag, 24 oktober</span></div>';
+          todayMeetings.forEach(m => { html += renderMeetingCard(m); });
+        }
+      } else {
+        // Week view
+        if (todayMeetings.length) {
+          html += '<div class="day-header"><span class="day-name">Vandaag</span><span class="day-date">Woensdag, 24 oktober</span></div>';
+          todayMeetings.forEach(m => { html += renderMeetingCard(m); });
+        }
+        if (tomorrowMeetings.length) {
+          html += '<div class="day-header"><span class="day-name">Morgen</span><span class="day-date">Donderdag, 25 oktober</span></div>';
+          tomorrowMeetings.forEach(m => { html += renderMeetingCard(m); });
+        }
+        if (laterMeetings.length) {
+          html += '<div class="day-header"><span class="day-name">Later deze week</span><span class="day-date"></span></div>';
+          laterMeetings.forEach(m => { html += renderMeetingCard(m); });
+        }
+      }
+
+      screen.innerHTML = html;
+    }
+
+    function renderMeetingCard(meeting) {
+      const isEssential = meeting.isEssentialForMe;
+      const attendees = meeting.attendees.slice(0, 3).map(id => getUser(id));
+      const endTime = calculateEndTime(meeting.time, meeting.duration);
+
+      let actionButtons = '';
+      if (!isEssential && meeting.myResponse === null) {
+        actionButtons = `
+          <div class="meeting-actions">
+            <button class="btn-accept" onclick="event.stopPropagation();respondToMeeting(${meeting.id}, 'accepted')">Accepteren</button>
+            <button class="btn-decline" onclick="event.stopPropagation();respondToMeeting(${meeting.id}, 'declined')">Afwijzen</button>
+          </div>
+        `;
+      } else if (!isEssential && meeting.myResponse === 'accepted') {
+        actionButtons = '<div class="meeting-actions"><button class="btn-accepted" disabled>Geaccepteerd</button></div>';
+      } else if (!isEssential && meeting.myResponse === 'declined') {
+        actionButtons = '<div class="meeting-actions"><button class="btn-declined" disabled>Afgewezen</button></div>';
+      }
+
+      return `
+        <div class="meeting-card ${isEssential ? 'essential' : 'optional'}" onclick="openMeetingDetail(${meeting.id})">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <div class="meeting-time-slot">
+              <span class="time">${meeting.time} - ${endTime}</span>
+              <span class="duration">${meeting.duration} min</span>
+            </div>
+            <span class="meeting-type-badge ${isEssential ? 'essential-badge' : 'optional-badge'}">${isEssential ? 'Essentieel' : 'Optioneel'}</span>
+          </div>
+          <h3>${meeting.title}</h3>
+          <p class="meeting-meta"><svg width="14" height="14" viewBox="0 0 24 24" fill="#9CA3AF" style="vertical-align:middle;margin-right:4px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>${meeting.location}</p>
+          <div class="meeting-attendees">
+            ${attendees.map(u => renderAvatar(u, 28)).join('')}
+            ${meeting.attendees.length > 3 ? '<span style="font-size:12px;color:#6B7280">+' + (meeting.attendees.length - 3) + ' anderen</span>' : ''}
+          </div>
+          ${actionButtons}
+        </div>
+      `;
+    }
+
+    function calculateEndTime(startTime, duration) {
+      const [hours, minutes] = startTime.split(':').map(Number);
+      const endMinutes = hours * 60 + minutes + duration;
+      const endHours = Math.floor(endMinutes / 60) % 24;
+      const endMins = endMinutes % 60;
+      return String(endHours).padStart(2, '0') + ':' + String(endMins).padStart(2, '0');
+    }
+
+    function switchAgendaTab(tab) {
+      currentAgendaTab = tab;
+      renderAgenda();
+    }
+
+    function respondToMeeting(meetingId, response) {
+      const meeting = appData.meetings.find(m => m.id === meetingId);
+      if (meeting) {
+        meeting.myResponse = response;
+        saveData();
+        renderAgenda();
+        showToast(response === 'accepted' ? 'Meeting geaccepteerd' : 'Meeting afgewezen', response === 'accepted' ? 'success' : 'info');
+      }
+    }
+
+    function openMeetingDetail(meetingId) {
+      const meeting = appData.meetings.find(m => m.id === meetingId);
+      if (!meeting) return;
+
+      const endTime = calculateEndTime(meeting.time, meeting.duration);
+      const essentialAttendees = meeting.essential.map(id => getUser(id));
+      const optionalAttendees = meeting.optional.map(id => getUser(id));
+
+      let html = `
+        <div style="margin-bottom:16px">
+          <span class="meeting-type-badge ${meeting.isEssentialForMe ? 'essential-badge' : 'optional-badge'}">${meeting.isEssentialForMe ? 'Essentieel voor jou' : 'Optioneel voor jou'}</span>
+        </div>
+        <h3 style="font-size:20px;margin-bottom:8px">${meeting.title}</h3>
+        <p style="color:#6B7280;margin-bottom:16px">${meeting.description}</p>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">WANNEER</label>
+          <p style="font-size:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="#715eed" style="vertical-align:middle;margin-right:6px"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm.5 5v6l5 3-.75 1.2-4.5-2.7V7h.25z"/></svg>${meeting.time} - ${endTime} (${meeting.duration} min)</p>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">LOCATIE</label>
+          <p style="font-size:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="#715eed" style="vertical-align:middle;margin-right:6px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>${meeting.location}</p>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">ESSENTIËLE DEELNEMERS (${essentialAttendees.length})</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${essentialAttendees.map(u => '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#D1FAE5;border-radius:8px">' + renderAvatar(u, 24) + '<span style="font-size:12px">' + u.name + '</span></div>').join('')}
+          </div>
+        </div>
+
+        ${optionalAttendees.length ? `
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">OPTIONELE DEELNEMERS (${optionalAttendees.length})</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${optionalAttendees.map(u => '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#F3F4F6;border-radius:8px">' + renderAvatar(u, 24) + '<span style="font-size:12px">' + u.name + '</span></div>').join('')}
+          </div>
+        </div>
+        ` : ''}
+
+        ${!meeting.isEssentialForMe ? `
+          <div style="margin-top:20px">
+            ${meeting.myResponse === null ? `
+              <button class="btn-full" onclick="respondToMeeting(${meeting.id}, 'accepted');closeModal()">Accepteren</button>
+              <button class="btn-outline" onclick="respondToMeeting(${meeting.id}, 'declined');closeModal()">Afwijzen</button>
+            ` : meeting.myResponse === 'accepted' ? `
+              <button class="btn-full" style="background:#10B981" disabled>Je hebt geaccepteerd</button>
+              <button class="btn-outline" onclick="respondToMeeting(${meeting.id}, 'declined');closeModal()">Toch afwijzen</button>
+            ` : `
+              <button class="btn-full" style="background:#9CA3AF" disabled>Je hebt afgewezen</button>
+              <button class="btn-outline" onclick="respondToMeeting(${meeting.id}, 'accepted');closeModal()">Toch accepteren</button>
+            `}
+          </div>
+        ` : ''}
+      `;
+      openModal(html, 'Meeting Details');
+    }
+
+    // ==================== UPDATES SCREEN ====================
+    let currentUpdateTab = 'for_you';
+
+    function renderUpdates() {
+      const screen = document.getElementById('updates-screen');
+      if (!screen) return;
+      let updates = currentUpdateTab === 'for_you' ? appData.updates.filter(u => u.forYou) : appData.updates;
+
+      const today = updates.filter(u => u.day === 'today');
+      const yesterday = updates.filter(u => u.day === 'yesterday');
+      const earlier = updates.filter(u => u.day === 'earlier');
+
+      let content = `
+        <div class="top-logo-container"><img src="https://www.cellnex.com/app/uploads/2025/07/Odido-Logo.png" alt="Odido" class="top-logo"></div>
+        <div class="header">
+          <div class="logo" onclick="toggleSidebar()" style="cursor:pointer">
+            <div class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#715eed"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></div>
+            <span class="logo-text">Menu</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="notification-bell" onclick="toggleNotifications()" style="position:relative;cursor:pointer">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#1F2937"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+              <span class="notification-dot"></span>
+            </div>
+            <div class="profile-avatar" onclick="openMyProfile()" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#715eed,#8b7bf0);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:600;cursor:pointer">JP</div>
+          </div>
+        </div>
+        <div class="tabs">
+          <button class="tab ${currentUpdateTab === 'for_you' ? 'active' : ''}" onclick="switchUpdateTab('for_you')">Voor jou (${appData.updates.filter(u => u.forYou).length})</button>
+          <button class="tab ${currentUpdateTab === 'all' ? 'active' : ''}" onclick="switchUpdateTab('all')">Alle updates (${appData.updates.length})</button>
+        </div>
+      `;
+
+      if (today.length) {
+        content += '<span class="time-label">VANDAAG</span>';
+        content += today.map(u => renderUpdateCard(u)).join('');
+      }
+      if (yesterday.length) {
+        content += '<span class="time-label" style="margin-top:20px">GISTEREN</span>';
+        content += yesterday.map(u => renderUpdateCard(u)).join('');
+      }
+      if (earlier.length) {
+        content += '<span class="time-label" style="margin-top:20px">EERGISTEREN</span>';
+        content += earlier.map(u => renderUpdateCard(u)).join('');
+      }
+
+      content += '<button class="btn-outline" style="margin-top:20px" onclick="openFullHistory()">Bekijk volledige historie</button>';
+
+      screen.innerHTML = content;
+    }
+
+    function renderUpdateCard(update) {
+      const project = getProject(update.project);
+      return '<div class="update-card ' + (update.urgent ? 'urgent' : '') + '" onclick="openUpdateDetail(' + update.id + ')" style="cursor:pointer"><div class="update-header"><div class="project-badge"><span class="dot" style="background:' + project.color + '"></span><span>' + project.name.toUpperCase() + '</span></div><span class="time">' + update.time + '</span></div><div class="update-row"><div class="update-icon ' + (update.urgent ? 'coral' : 'purple') + '"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/></svg></div><div class="update-text"><p style="font-weight:500">' + update.title + '</p><p style="font-size:13px;color:#6B7280">' + update.description + '</p></div></div></div>';
+    }
+
+    function switchUpdateTab(tab) {
+      currentUpdateTab = tab;
+      renderUpdates();
+    }
+
+    function openFullHistory() {
+      let html = '<div style="max-height:400px;overflow-y:auto">';
+      appData.updates.forEach(u => {
+        const project = getProject(u.project);
+        html += '<div style="padding:12px 0;border-bottom:1px solid #F3F4F6"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:' + project.color + ';font-weight:600">' + project.name.toUpperCase() + '</span><span style="font-size:11px;color:#9CA3AF">' + u.time + '</span></div><p style="font-size:14px;font-weight:500;margin-bottom:2px">' + u.title + '</p><p style="font-size:12px;color:#6B7280">' + u.description + '</p></div>';
+      });
+      html += '</div>';
+      openModal(html, 'Volledige Historie (' + appData.updates.length + ')');
+    }
+
+    function openUpdateDetail(id) {
+      const update = appData.updates.find(u => u.id === id);
+      if (!update) return;
+      const project = getProject(update.project);
+      let html = `
+        <div style="margin-bottom:16px">
+          <span class="project-badge"><span class="dot" style="background:${project.color}"></span>${project.name}</span>
+          <span style="float:right;font-size:12px;color:#9CA3AF">${update.time}</span>
+        </div>
+        <h3 style="font-size:18px;margin-bottom:12px">${update.title}</h3>
+        <p style="color:#6B7280;margin-bottom:20px">${update.description}</p>
+        ${update.urgent ? '<button class="btn-full" onclick="approveUpdate(' + id + ')">Goedkeuren</button><button class="btn-outline" onclick="rejectUpdate(' + id + ')">Afwijzen</button>' : '<button class="btn-outline" onclick="markUpdateRead(' + id + ')">Markeer als gelezen</button>'}
+      `;
+      openModal(html, update.type === 'action_required' ? 'Actie vereist' : 'Update');
+    }
+
+    function approveUpdate(id) {
+      appData.updates = appData.updates.filter(u => u.id !== id);
+      saveData(); closeModal();
+      showToast('Budget goedgekeurd!', 'success');
+    }
+
+    function rejectUpdate(id) {
+      appData.updates = appData.updates.filter(u => u.id !== id);
+      saveData(); closeModal();
+      showToast('Budget afgewezen', 'info');
+    }
+
+    function markUpdateRead(id) {
+      const update = appData.updates.find(u => u.id === id);
+      if (update) update.read = true;
+      saveData(); closeModal();
+      showToast('Gemarkeerd als gelezen', 'info');
+    }
+
+    // ==================== TASKS SCREEN ====================
+    let currentTaskFilter = 'all';
+
+    function renderTasks() {
+      const content = document.querySelector('.tasks-content');
+      if (!content) return;
+
+      let tasks = appData.tasks;
+      if (currentTaskFilter === 'mine') tasks = tasks.filter(t => t.assignees.includes(1));
+      else if (currentTaskFilter === 'review') tasks = tasks.filter(t => t.status === 'in_review');
+
+      const today = tasks.filter(t => t.deadline === 'today' && t.status !== 'done');
+      const tomorrow = tasks.filter(t => t.deadline === 'tomorrow' && t.status !== 'done');
+      const thisWeek = tasks.filter(t => t.deadline === 'this_week' && t.status !== 'done');
+      const later = tasks.filter(t => t.deadline === 'later' && t.status !== 'done');
+      const done = tasks.filter(t => t.status === 'done');
+
+      let html = '';
+      if (today.length) html += '<h3 class="section-title">Vandaag</h3>' + today.map(t => renderTaskCard(t)).join('');
+      if (tomorrow.length) html += '<h3 class="section-title">Morgen</h3>' + tomorrow.map(t => renderTaskCard(t)).join('');
+      if (thisWeek.length) html += '<h3 class="section-title">Deze week</h3>' + thisWeek.map(t => renderTaskCard(t)).join('');
+      if (later.length) html += '<h3 class="section-title">Later</h3>' + later.map(t => renderTaskCard(t)).join('');
+      if (done.length) html += '<h3 class="section-title">Afgerond</h3>' + done.map(t => renderTaskCard(t)).join('');
+
+      content.innerHTML = html;
+      updateTaskProgress();
+    }
+
+    function renderTaskCard(task) {
+      const project = getProject(task.project);
+      const isUrgent = task.priority === 'urgent';
+      const deadlineText = task.deadline === 'today' ? (task.deadlineTime || 'Vandaag') : task.deadline === 'tomorrow' ? 'Morgen' : task.deadline === 'this_week' ? 'Deze week' : 'Later';
+
+      return `
+        <div class="task-card ${isUrgent ? 'urgent' : ''}" onclick="openTaskDetail(${task.id})" style="cursor:pointer">
+          <div class="task-header">
+            <span class="status-badge status-${task.status}">${task.status.replace('_', ' ')}</span>
+            ${isUrgent ? '<span class="tag urgent-tag">Urgent</span>' : ''}
+          </div>
+          <h3>${task.title}</h3>
+          <p class="task-meta">${project.name} • ${task.description.substring(0, 40)}...</p>
+          <div class="task-footer">
+            <div class="assignees">
+              ${task.assignees.slice(0, 2).map(id => renderAvatar(getUser(id), 28)).join('')}
+              ${task.assignees.length > 2 ? '<span class="more-assignees">+' + (task.assignees.length - 2) + '</span>' : ''}
+            </div>
+            <div class="deadline ${isUrgent ? 'urgent' : ''}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="${isUrgent ? '#EF4444' : '#6B7280'}"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm.5 5v6l5 3-.75 1.2-4.5-2.7V7h.25z"/></svg>
+              <span>${deadlineText}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateTaskProgress() {
+      const total = appData.tasks.length;
+      const done = appData.tasks.filter(t => t.status === 'done').length;
+      const percent = Math.round((done / total) * 100);
+
+      const progressNum = document.querySelector('.progress-number');
+      const progressLabel = document.querySelector('.progress-label');
+      const progressPercent = document.querySelector('.progress-percent');
+      const progressFill = document.querySelector('.progress-fill');
+
+      if (progressNum) progressNum.textContent = done;
+      if (progressLabel) progressLabel.textContent = ' van ' + total + ' taken';
+      if (progressPercent) progressPercent.textContent = percent + '%';
+      if (progressFill) progressFill.style.width = percent + '%';
+    }
+
+    function setTaskFilter(filter) {
+      currentTaskFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      renderTasks();
+    }
+
+    function openTaskDetail(taskId) {
+      const task = appData.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      const project = getProject(task.project);
+      const creator = task.creator ? getUser(task.creator) : null;
+      const completedSubtasks = task.subtasks.filter(st => st.done).length;
+
+      let subtasksHtml = task.subtasks.length ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;margin:0">SUBTAKEN</label>
+          <span style="font-size:11px;color:#9CA3AF">${completedSubtasks}/${task.subtasks.length} voltooid</span>
+        </div>
+        ${task.subtasks.map(st => `
+        <div class="checkbox-item ${st.done ? 'done' : ''}">
+          <input type="checkbox" ${st.done ? 'checked' : ''} onchange="toggleSubtask(${task.id}, ${st.id})">
+          <span>${st.text}</span>
+        </div>
+      `).join('')}` : '<p style="color:#9CA3AF;font-size:13px">Geen subtaken</p>';
+
+      let commentsHtml = task.comments.length ? task.comments.map(c => {
+        const user = getUser(c.user);
+        return `<div style="display:flex;gap:10px;margin-bottom:12px">${renderAvatar(user, 32)}<div><strong style="font-size:13px">${user.name}</strong><span style="font-size:11px;color:#9CA3AF;margin-left:8px">${c.time}</span><p style="font-size:13px;color:#6B7280;margin-top:4px">${c.text}</p></div></div>`;
+      }).join('') : '';
+
+      let html = `
+        <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start">
+          <span class="project-badge"><span class="dot" style="background:${project.color}"></span>${project.name}</span>
+          <span class="status-badge status-${task.status}">${task.status.replace('_', ' ')}</span>
+        </div>
+        <h3 style="font-size:20px;margin-bottom:8px">${task.title}</h3>
+        <p style="color:#6B7280;margin-bottom:16px">${task.description}</p>
+
+        ${creator ? `
+        <div style="margin-bottom:16px;padding:12px;background:#F9FAFB;border-radius:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            ${renderAvatar(creator, 32)}
+            <div>
+              <span style="font-size:12px;color:#9CA3AF">Aangemaakt door</span>
+              <p style="font-size:14px;font-weight:500;margin:2px 0 0">${creator.name}</p>
+            </div>
+            <span style="margin-left:auto;font-size:11px;color:#9CA3AF">${task.createdAt || ''}</span>
+          </div>
+        </div>
+        ` : ''}
+
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <label style="font-size:12px;font-weight:600;color:#6B7280;margin:0">TOEGEWEZEN AAN</label>
+            <button onclick="openReassignModal(${task.id})" style="font-size:11px;color:#715eed;background:none;border:none;cursor:pointer;font-weight:600">Wijzigen</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${task.assignees.map(id => {
+              const u = getUser(id);
+              return '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#F3F4F6;border-radius:8px">' + renderAvatar(u, 24) + '<span style="font-size:12px">' + u.name + '</span></div>';
+            }).join('')}
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">DEADLINE</label>
+          <p style="display:flex;align-items:center;gap:6px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="${task.priority === 'urgent' ? '#EF4444' : '#6B7280'}"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm.5 5v6l5 3-.75 1.2-4.5-2.7V7h.25z"/></svg>
+            ${task.deadline === 'today' ? 'Vandaag' : task.deadline === 'tomorrow' ? 'Morgen' : task.deadline === 'this_week' ? 'Deze week' : 'Later'} ${task.deadlineTime ? 'om ' + task.deadlineTime : ''}
+          </p>
+        </div>
+
+        <div style="margin-bottom:16px">
+          ${subtasksHtml}
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">STATUS WIJZIGEN</label>
+          <select onchange="changeTaskStatus(${task.id}, this.value)" style="width:100%;padding:10px;border:1px solid #E5E7EB;border-radius:8px">
+            <option value="todo" ${task.status === 'todo' ? 'selected' : ''}>To Do</option>
+            <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+            <option value="in_review" ${task.status === 'in_review' ? 'selected' : ''}>In Review</option>
+            <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
+          </select>
+        </div>
+
+        ${commentsHtml ? '<div style="margin-bottom:16px"><label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">COMMENTS</label>' + commentsHtml + '</div>' : ''}
+
+        <!-- AI Assistance -->
+        <div style="margin-bottom:16px;padding:14px;background:linear-gradient(135deg,#EDE9F5,#E8E0F5);border-radius:12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#715eed"><path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/></svg>
+            <span style="font-size:13px;font-weight:600;color:#715eed">AI Assistent</span>
+          </div>
+          <button onclick="askAboutTask(${task.id})" style="width:100%;padding:10px;background:white;border:1px solid #715eed;border-radius:8px;font-size:13px;color:#715eed;cursor:pointer;font-weight:500">Stel vragen over deze taak</button>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid #E5E7EB">
+          <button onclick="deleteTask(${task.id})" style="flex:1;padding:12px;background:#FEE2E2;border:none;border-radius:10px;font-size:13px;font-weight:600;color:#DC2626;cursor:pointer">Verwijderen</button>
+        </div>
+      `;
+      openModal(html, 'Taak Details');
+    }
+
+    function openReassignModal(taskId) {
+      const task = appData.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      closeModal();
+
+      let html = '<div style="max-height:400px;overflow-y:auto">';
+      html += '<p style="font-size:13px;color:#6B7280;margin-bottom:16px">Selecteer teamleden om toe te wijzen aan deze taak:</p>';
+
+      appData.users.forEach(u => {
+        const isAssigned = task.assignees.includes(u.id);
+        html += `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F3F4F6">
+            <input type="checkbox" id="reassign-${u.id}" ${isAssigned ? 'checked' : ''} style="width:18px;height:18px;accent-color:#715eed">
+            ${renderAvatar(u, 36)}
+            <label for="reassign-${u.id}" style="flex:1;cursor:pointer">
+              <span style="font-size:14px;font-weight:500">${u.name}</span><br>
+              <span style="font-size:12px;color:#6B7280">${u.role}</span>
+            </label>
+          </div>
+        `;
+      });
+      html += '</div>';
+      html += `<button onclick="saveReassignment(${taskId})" class="btn-full" style="margin-top:16px">Opslaan</button>`;
+
+      openModal(html, 'Taak Toewijzen');
+    }
+
+    function saveReassignment(taskId) {
+      const task = appData.tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const newAssignees = [];
+      appData.users.forEach(u => {
+        const checkbox = document.getElementById('reassign-' + u.id);
+        if (checkbox && checkbox.checked) {
+          newAssignees.push(u.id);
+        }
+      });
+
+      if (newAssignees.length === 0) {
+        showToast('Selecteer minimaal één persoon', 'error');
+        return;
+      }
+
+      task.assignees = newAssignees;
+      saveData();
+      closeModal();
+      renderTasks();
+      showToast('Taak opnieuw toegewezen', 'success');
+    }
+
+    function askAboutTask(taskId) {
+      const task = appData.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      closeModal();
+
+      const responses = [
+        `Deze taak "${task.title}" heeft ${task.subtasks.length} subtaken waarvan ${task.subtasks.filter(s => s.done).length} zijn voltooid. Op basis van de huidige voortgang ligt de taak goed op schema.`,
+        `Ik zie dat er ${task.assignees.length} mensen aan deze taak werken. Tip: Je kunt de workload verdelen door subtaken toe te wijzen aan specifieke teamleden.`,
+        `De deadline voor "${task.title}" is ${task.deadline === 'today' ? 'vandaag' : task.deadline === 'tomorrow' ? 'morgen' : 'binnenkort'}. Wil je dat ik een herinnering instuur naar het team?`,
+        `Op basis van vergelijkbare taken in het verleden, schat ik dat deze taak nog ongeveer 2-3 uur werk vereist. Wil je hulp bij het prioriteren?`
+      ];
+
+      let html = `
+        <div style="padding:20px;background:linear-gradient(135deg,#EDE9F5,#E8E0F5);border-radius:12px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#715eed"><path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/></svg>
+            <span style="font-weight:600;color:#715eed">AI Analyse voor "${task.title}"</span>
+          </div>
+          <p style="font-size:14px;color:#1F2937;line-height:1.6">${responses[Math.floor(Math.random() * responses.length)]}</p>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">STEL EEN VRAAG</label>
+          <input type="text" id="task-question" placeholder="Bijv. Hoe kan ik deze taak sneller afronden?" style="width:100%;padding:12px;border:1px solid #E5E7EB;border-radius:8px;font-size:14px">
+        </div>
+        <button onclick="submitTaskQuestion(${taskId})" class="btn-full">Vraag stellen</button>
+      `;
+      openModal(html, 'AI Assistent');
+    }
+
+    function submitTaskQuestion(taskId) {
+      const question = document.getElementById('task-question').value;
+      if (!question.trim()) {
+        showToast('Voer een vraag in', 'error');
+        return;
+      }
+      closeModal();
+      showToast('Je vraag wordt verwerkt...', 'info');
+      setTimeout(() => {
+        showToast('AI antwoord is klaar! Check je notificaties.', 'success');
+      }, 2000);
+    }
+
+    function deleteTask(taskId) {
+      if (confirm('Weet je zeker dat je deze taak wilt verwijderen?')) {
+        appData.tasks = appData.tasks.filter(t => t.id !== taskId);
+        saveData();
+        closeModal();
+        renderTasks();
+        showToast('Taak verwijderd', 'info');
+      }
+    }
+
+    function toggleSubtask(taskId, subtaskId) {
+      const task = appData.tasks.find(t => t.id === taskId);
+      const subtask = task.subtasks.find(st => st.id === subtaskId);
+      subtask.done = !subtask.done;
+      saveData();
+      showToast(subtask.done ? 'Subtaak afgevinkt' : 'Subtaak heropend', 'info');
+    }
+
+    function changeTaskStatus(taskId, status) {
+      const task = appData.tasks.find(t => t.id === taskId);
+      task.status = status;
+      saveData();
+      showToast('Status gewijzigd naar ' + status.replace('_', ' '), 'success');
+      renderTasks();
+    }
+
+    function openNewTaskModal() {
+      let html = `
+        <div class="form-group">
+          <label>Titel</label>
+          <input type="text" id="new-task-title" placeholder="Voer titel in...">
+        </div>
+        <div class="form-group">
+          <label>Beschrijving</label>
+          <textarea id="new-task-desc" placeholder="Beschrijf de taak..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Project</label>
+          <select id="new-task-project">
+            ${appData.projects.map(p => '<option value="' + p.id + '">' + p.name + '</option>').join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <select id="new-task-deadline">
+            <option value="today">Vandaag</option>
+            <option value="tomorrow">Morgen</option>
+            <option value="this_week">Deze week</option>
+            <option value="later">Later</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prioriteit</label>
+          <select id="new-task-priority">
+            <option value="normal">Normaal</option>
+            <option value="high">Hoog</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <button class="btn-full" onclick="createNewTask()">Taak aanmaken</button>
+      `;
+      openModal(html, 'Nieuwe Taak');
+    }
+
+    function createNewTask() {
+      const title = document.getElementById('new-task-title').value;
+      const desc = document.getElementById('new-task-desc').value;
+      const project = parseInt(document.getElementById('new-task-project').value);
+      const deadline = document.getElementById('new-task-deadline').value;
+      const priority = document.getElementById('new-task-priority').value;
+
+      if (!title) { showToast('Vul een titel in', 'error'); return; }
+
+      const newTask = {
+        id: Math.max(...appData.tasks.map(t => t.id)) + 1,
+        title, description: desc || 'Geen beschrijving', project,
+        assignees: [1], deadline, status: 'todo', priority,
+        subtasks: [], comments: []
+      };
+      appData.tasks.push(newTask);
+      saveData();
+      closeModal();
+      renderTasks();
+      showToast('Taak aangemaakt!', 'success');
+    }
+
+    // ==================== TEAM SCREEN ====================
+    let teamView = 'members';
+
+    function renderTeam() {
+      const screen = document.getElementById('team-screen');
+      if (!screen) return;
+
+      let html = `
+        <div class="top-logo-container"><img src="https://www.cellnex.com/app/uploads/2025/07/Odido-Logo.png" alt="Odido" class="top-logo"></div>
+        <div class="header">
+          <div class="logo" onclick="toggleSidebar()" style="cursor:pointer">
+            <div class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#715eed"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></div>
+            <span class="logo-text">Menu</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="notification-bell" onclick="toggleNotifications()" style="position:relative;cursor:pointer">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#1F2937"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+              <span class="notification-dot"></span>
+            </div>
+            <div class="profile-avatar" onclick="openMyProfile()" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#715eed,#8b7bf0);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:600;cursor:pointer">JP</div>
+          </div>
+        </div>
+        <div class="tabs">
+          <button class="tab ${teamView === 'members' ? 'active' : ''}" onclick="switchTeamView('members')">Teamleden</button>
+          <button class="tab ${teamView === 'projects' ? 'active' : ''}" onclick="switchTeamView('projects')">Projecten</button>
+        </div>
+        <div class="search-input">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#9CA3AF"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" placeholder="Zoeken..." oninput="filterTeam(this.value)">
+        </div>
+        <div id="team-content" style="padding-bottom:100px">
+          ${teamView === 'members' ? renderTeamMembers() : renderProjects()}
+        </div>
+      `;
+      screen.innerHTML = html;
+    }
+
+    function renderTeamMembers() {
+      let html = '';
+      appData.teams.forEach(team => {
+        const members = appData.users.filter(u => u.team === team.id);
+        html += `
+          <div class="team-category">
+            <div class="team-category-header">
+              <span class="team-category-title" style="color:${team.color}">${team.name}</span>
+              <span class="team-category-count">${members.length} leden</span>
+            </div>
+            ${members.map(u => `
+              <div class="team-member-card" onclick="openMemberProfile(${u.id})" data-name="${u.name.toLowerCase()}">
+                ${renderAvatar(u, 44)}
+                <div class="member-info">
+                  <h3>${u.name}</h3>
+                  <p>${u.role}</p>
+                </div>
+                <div class="status-indicator ${u.status}"></div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      });
+      return html;
+    }
+
+    function renderProjects() {
+      const displayProjects = appData.projects.slice(0, 5);
+      const totalProjects = appData.projects.length;
+
+      let html = displayProjects.map(p => {
+        const members = p.members.map(id => getUser(id)).filter(m => m);
+        const tasks = appData.tasks.filter(t => t.project === p.id);
+        const done = tasks.filter(t => t.status === 'done').length;
+        const percent = p.progress || (tasks.length ? Math.round((done / tasks.length) * 100) : 0);
+        return `
+          <div class="team-member-card" onclick="openProjectDetail(${p.id})" style="flex-direction:column;align-items:stretch">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+              <div style="width:48px;height:48px;border-radius:12px;background:${p.color};display:flex;align-items:center;justify-content:center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
+              </div>
+              <div class="member-info">
+                <h3>${p.name}</h3>
+                <p>${members.length} leden • ${percent}% voltooid</p>
+              </div>
+            </div>
+            <p style="font-size:12px;color:#6B7280;margin-bottom:12px;line-height:1.4">${p.description || ''}</p>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="flex:1;height:6px;background:#E5E7EB;border-radius:3px">
+                <div style="width:${percent}%;height:100%;background:${p.color};border-radius:3px"></div>
+              </div>
+              <span style="font-size:12px;color:#6B7280">${percent}%</span>
+            </div>
+            <div style="display:flex;margin-top:12px">
+              ${members.slice(0, 4).map(m => renderAvatar(m, 28)).join('')}
+              ${members.length > 4 ? '<span style="font-size:12px;color:#6B7280;margin-left:8px">+' + (members.length - 4) + '</span>' : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (totalProjects > 5) {
+        html += `<button class="btn-outline" style="margin-top:8px" onclick="openAllProjects()">Bekijk alle projecten (${totalProjects})</button>`;
+      }
+
+      return html;
+    }
+
+    function openAllProjects() {
+      let html = '<div style="max-height:400px;overflow-y:auto">';
+      appData.projects.forEach(p => {
+        const members = p.members.map(id => getUser(id)).filter(m => m);
+        const percent = p.progress || 0;
+        html += `
+          <div style="padding:12px;background:#F9FAFB;border-radius:12px;margin-bottom:12px;cursor:pointer" onclick="closeModal();openProjectDetail(${p.id})">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+              <div style="width:40px;height:40px;border-radius:10px;background:${p.color};display:flex;align-items:center;justify-content:center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
+              </div>
+              <div style="flex:1">
+                <span style="font-size:14px;font-weight:600;color:#1F2937">${p.name}</span>
+                <p style="font-size:12px;color:#6B7280;margin:2px 0 0">${members.length} leden</p>
+              </div>
+              <span style="font-size:12px;font-weight:600;color:${p.color}">${percent}%</span>
+            </div>
+            <div style="height:4px;background:#E5E7EB;border-radius:2px">
+              <div style="width:${percent}%;height:100%;background:${p.color};border-radius:2px"></div>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      openModal(html, 'Alle Projecten (' + appData.projects.length + ')');
+    }
+
+    function switchTeamView(view) {
+      teamView = view;
+      renderTeam();
+    }
+
+    function filterTeam(query) {
+      document.querySelectorAll('#team-content .team-member-card').forEach(card => {
+        const name = card.dataset.name || card.querySelector('h3').textContent.toLowerCase();
+        card.style.display = name.includes(query.toLowerCase()) ? 'flex' : 'none';
+      });
+    }
+
+    function openMemberProfile(userId) {
+      const user = getUser(userId);
+      const projects = appData.projects.filter(p => p.members.includes(userId));
+      const tasks = appData.tasks.filter(t => t.assignees.includes(userId) && t.status !== 'done');
+
+      let html = `
+        <div style="text-align:center;margin-bottom:20px">
+          ${renderAvatar(user, 80)}
+          <h3 style="font-size:20px;margin-top:12px">${user.name}</h3>
+          <p style="color:#6B7280">${user.role}</p>
+          <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:8px">
+            <div class="status-indicator ${user.status}"></div>
+            <span style="font-size:13px;color:#6B7280">${user.status === 'online' ? 'Online' : user.status === 'busy' ? 'Bezet' : 'Offline'}</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">PROJECTEN</label>
+          ${projects.map(p => '<span style="display:inline-block;padding:6px 12px;background:#F3F4F6;border-radius:8px;font-size:13px;margin-right:8px;margin-bottom:8px">' + p.name + '</span>').join('')}
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">OPENSTAANDE TAKEN (${tasks.length})</label>
+          ${tasks.slice(0, 3).map(t => '<div style="padding:10px;background:#F9FAFB;border-radius:8px;margin-bottom:8px"><p style="font-size:13px;font-weight:500">' + t.title + '</p><span style="font-size:11px;color:#6B7280">' + getProject(t.project).name + '</span></div>').join('')}
+          ${tasks.length > 3 ? '<p style="font-size:12px;color:#715eed;cursor:pointer">+' + (tasks.length - 3) + ' meer taken</p>' : ''}
+        </div>
+
+        <button class="btn-full" onclick="closeModal();showToast('Bericht functie komt binnenkort', 'info')">Stuur bericht</button>
+      `;
+      openModal(html, 'Profiel');
+    }
+
+    function openProjectDetail(projectId) {
+      const project = getProject(projectId);
+      const members = project.members.map(id => getUser(id));
+      const tasks = appData.tasks.filter(t => t.project === projectId);
+      const done = tasks.filter(t => t.status === 'done').length;
+      const percent = Math.round((done / tasks.length) * 100) || 0;
+
+      let html = `
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="width:64px;height:64px;border-radius:16px;background:${project.color};display:flex;align-items:center;justify-content:center;margin:0 auto">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
+          </div>
+          <h3 style="font-size:20px;margin-top:12px">${project.name}</h3>
+          <p style="color:#6B7280">${tasks.length} taken • ${done} afgerond</p>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <div style="flex:1;height:8px;background:#E5E7EB;border-radius:4px">
+              <div style="width:${percent}%;height:100%;background:${project.color};border-radius:4px"></div>
+            </div>
+            <span style="font-size:14px;font-weight:600">${percent}%</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">TEAMLEDEN (${members.length})</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${members.map(m => '<div style="display:flex;align-items:center;gap:8px;padding:8px;background:#F9FAFB;border-radius:8px">' + renderAvatar(m, 28) + '<span style="font-size:13px">' + m.name + '</span></div>').join('')}
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:8px">RECENTE TAKEN</label>
+          ${tasks.slice(0, 4).map(t => '<div style="padding:10px;background:#F9FAFB;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">' + t.title + '</span><span class="status-badge status-' + t.status + '">' + t.status.replace('_', ' ') + '</span></div>').join('')}
+        </div>
+      `;
+      openModal(html, 'Project');
+    }
+
+    // ==================== SIDEBAR ====================
+    function toggleSidebar() {
+      document.querySelector('.sidebar').classList.toggle('show');
+      document.querySelector('.sidebar-overlay').classList.toggle('show');
+    }
+
+    // ==================== PROFILE ====================
+    function openMyProfile() {
+      const user = getUser(1);
+      const myTeam = appData.teams.find(t => t.id === user.team);
+      const myTeamMembers = appData.users.filter(u => u.team === user.team);
+      const screen = document.getElementById('profile-screen');
+      screen.innerHTML = `
+        <div class="header">
+          <button class="back-btn" onclick="navigateTo('home')"><svg width="24" height="24" viewBox="0 0 24 24" fill="#1F2937"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+          <span class="header-title">Mijn Profiel</span>
+          <div style="width:24px"></div>
+        </div>
+        <div class="profile-header">
+          <div class="profile-avatar-large">JP</div>
+          <h2 style="font-size:22px;font-weight:700;color:#1F2937">${user.name}</h2>
+          <p style="color:#6B7280">${user.role}</p>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px">
+            <div class="status-indicator online"></div>
+            <span style="font-size:13px;color:#6B7280">Online</span>
+          </div>
+        </div>
+        <div class="profile-section">
+          <h3 style="font-size:14px;font-weight:600;color:#6B7280;margin-bottom:12px">CONTACTGEGEVENS</h3>
+          <div class="profile-row"><span class="profile-label">Email</span><span class="profile-value">j.plass@odido.nl</span></div>
+          <div class="profile-row"><span class="profile-label">Telefoon</span><span class="profile-value">+31 6 1234 5678</span></div>
+          <div class="profile-row"><span class="profile-label">Afdeling</span><span class="profile-value">Marketing</span></div>
+        </div>
+        <div class="profile-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:14px;font-weight:600;color:#6B7280;margin:0">MIJN TEAM - ${myTeam.name.toUpperCase()}</h3>
+            <span style="font-size:12px;color:#9CA3AF">${myTeamMembers.length} leden</span>
+          </div>
+          <div style="margin-bottom:12px"><span style="font-size:12px;color:#9CA3AF">LIJNMANAGER</span></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#F9FAFB;border-radius:12px;margin-bottom:12px">
+            ${renderAvatar(getUser(3), 40)}
+            <div><strong style="font-size:14px">${getUser(3).name}</strong><br><span style="font-size:12px;color:#6B7280">${getUser(3).role}</span></div>
+          </div>
+          <div style="margin-bottom:8px"><span style="font-size:12px;color:#9CA3AF">TEAMLEDEN (inclusief jij)</span></div>
+          ${myTeamMembers.map(u => {
+            const isMe = u.id === 1;
+            return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F3F4F6' + (isMe ? ';background:#F3F0F8;margin:0 -16px;padding-left:16px;padding-right:16px' : '') + '">' + renderAvatar(u, 36) + '<div style="flex:1"><span style="font-size:14px;font-weight:500">' + u.name + (isMe ? ' (jij)' : '') + '</span><br><span style="font-size:12px;color:#6B7280">' + u.role + '</span></div><div class="status-indicator ' + u.status + '"></div></div>';
+          }).join('')}
+          <button class="btn-outline" style="margin-top:16px" onclick="openAllTeams()">Bekijk alle teams</button>
+        </div>
+        <div class="profile-section" style="background:linear-gradient(135deg,#EDE9F5,#E8E0F5)">
+          <h3 style="font-size:14px;font-weight:600;color:#715eed;margin-bottom:8px">Extra rechten aanvragen</h3>
+          <p style="font-size:13px;color:#6B7280;margin-bottom:12px">Heb je toegang nodig tot andere projecten of teams?</p>
+          <button class="btn-full" onclick="showToast('Aanvraag verstuurd naar je manager', 'success')">Rechten aanvragen</button>
+        </div>
+      `;
+      navigateTo('profile');
+    }
+
+    function openAllTeams() {
+      let html = '<div style="max-height:400px;overflow-y:auto">';
+      appData.teams.forEach(team => {
+        const members = appData.users.filter(u => u.team === team.id);
+        html += `
+          <div style="margin-bottom:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <span style="font-size:14px;font-weight:600;color:${team.color}">${team.name}</span>
+              <span style="font-size:12px;color:#9CA3AF">${members.length} leden</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              ${members.map(u => '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#F9FAFB;border-radius:8px">' + renderAvatar(u, 24) + '<span style="font-size:12px">' + u.name + '</span></div>').join('')}
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      openModal(html, 'Alle Teams (' + appData.teams.length + ')');
+    }
+
+    // ==================== SETTINGS ====================
+    function openSettings() {
+      let html = `
+        <div class="profile-section" style="margin-bottom:16px">
+          <h3 style="font-size:14px;font-weight:600;color:#6B7280;margin-bottom:12px">KOPPELINGEN</h3>
+          <div class="profile-row" style="cursor:pointer" onclick="showToast('Verbinden met Microsoft...', 'info')">
+            <span class="profile-label">Microsoft 365</span>
+            <span style="color:#715eed;font-size:13px;font-weight:500">Verbinden</span>
+          </div>
+          <div class="profile-row" style="cursor:pointer" onclick="showToast('Verbinden met Google...', 'info')">
+            <span class="profile-label">Google Workspace</span>
+            <span style="color:#715eed;font-size:13px;font-weight:500">Verbinden</span>
+          </div>
+          <div class="profile-row" style="cursor:pointer" onclick="showToast('Verbinden met Slack...', 'info')">
+            <span class="profile-label">Slack</span>
+            <span style="color:#715eed;font-size:13px;font-weight:500">Verbinden</span>
+          </div>
+        </div>
+        <div class="profile-section" style="margin-bottom:16px">
+          <h3 style="font-size:14px;font-weight:600;color:#6B7280;margin-bottom:12px">NOTIFICATIES</h3>
+          <div class="profile-row"><span class="profile-label">Push notificaties</span><input type="checkbox" checked style="accent-color:#715eed"></div>
+          <div class="profile-row"><span class="profile-label">Email notificaties</span><input type="checkbox" checked style="accent-color:#715eed"></div>
+          <div class="profile-row"><span class="profile-label">AI suggesties</span><input type="checkbox" checked style="accent-color:#715eed"></div>
+        </div>
+        <div class="profile-section">
+          <h3 style="font-size:14px;font-weight:600;color:#6B7280;margin-bottom:12px">OVER</h3>
+          <div class="profile-row"><span class="profile-label">Versie</span><span class="profile-value">1.0.0</span></div>
+          <div class="profile-row"><span class="profile-label">Build</span><span class="profile-value">2024.10.24</span></div>
+        </div>
+      `;
+      openModal(html, 'Instellingen');
+    }
+
+    // ==================== AI CHAT ====================
+    let chatMessages = [
+      { type: 'ai', text: 'Hoi! Ik ben je AI assistent. Stel me vragen over je projecten.' }
+    ];
+
+    function sendChatMessage() {
+      const input = document.getElementById('ai-chat-input');
+      const msg = input.value.trim();
+      if (!msg) return;
+      chatMessages.push({ type: 'user', text: msg });
+      input.value = '';
+      renderChatMessages();
+      setTimeout(() => {
+        const responses = [
+          'Ik zie dat je 3 taken hebt met deadline vandaag. Wil je dat ik prioriteer?',
+          'Het Q4 Campaign project ligt 66% op schema. De volgende milestone is vrijdag.',
+          'Sanne heeft gisteren de designs goedgekeurd. De copy wacht nog op review.',
+          'Je hebt 2 meetings vandaag: standup om 9:00 en kickoff om 10:00.',
+          'Ik kan je helpen met het plannen van je taken. Wat wil je weten?'
+        ];
+        chatMessages.push({ type: 'ai', text: responses[Math.floor(Math.random() * responses.length)] });
+        renderChatMessages();
+      }, 1000);
+    }
+
+    function renderChatMessages() {
+      const container = document.getElementById('chat-messages');
+      if (!container) return;
+      container.innerHTML = chatMessages.map(m => '<div class="chat-message ' + m.type + '">' + m.text + '</div>').join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Initialize
+    document.getElementById('fab-btn').style.display = 'none';
+    document.addEventListener('DOMContentLoaded', () => { renderHome(); updateNotificationBadge(); });
+  </script>
+</body>
+</html>
