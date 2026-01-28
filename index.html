@@ -111,8 +111,11 @@
         height: 100%;
         overflow-y: auto;
       }
-      .screen:not(#meeting-screen) {
+      .screen:not(#meeting-screen):not(#tasks-screen) {
         padding-top: 30px;
+      }
+      #tasks-screen {
+        padding-top: 0 !important;
       }
       .screen .fixed, .mobile-container .fixed {
         position: absolute !important;
@@ -231,8 +234,8 @@
     .update-icon.coral { background: linear-gradient(135deg, #F97316, #FB923C); }
     .update-text p { font-size: 14px; color: #1F2937; margin-bottom: 6px; }
     .status-ok { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #10B981; }
-    #tasks-screen { padding: 0; }
-    .tasks-header-gradient { background: linear-gradient(135deg, #715eed, #8b7bf0) !important; padding: 60px 20px 24px; border-radius: 0 0 32px 32px; }
+    #tasks-screen { padding: 0 !important; padding-top: 0 !important; }
+    .tasks-header-gradient { background: linear-gradient(135deg, #715eed, #8b7bf0) !important; padding: 24px 20px 24px; border-radius: 0 0 32px 32px; }
     .tasks-header-top { display: flex; justify-content: space-between; margin-bottom: 20px; }
     .team-info { display: flex; align-items: center; gap: 12px; }
     .team-label { font-size: 13px; color: rgba(255,255,255,0.8); }
