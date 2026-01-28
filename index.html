@@ -474,9 +474,9 @@
       <div class="meeting-action"><button class="btn-send" onclick="sendInvitations()">Verstuur uitnodigingen <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button></div>
     </div>
     <!-- Agenda Screen (Meetings) -->
-    <div id="agenda-screen" class="screen" style="padding:60px 20px 100px"></div>
+    <div id="agenda-screen" class="screen"></div>
     <!-- Project Updates Screen -->
-    <div id="updates-screen" class="screen" style="padding:60px 20px 100px"></div>
+    <div id="updates-screen" class="screen"></div>
     <div id="tasks-screen" class="screen">
       <div class="tasks-header-gradient"><div class="tasks-header-top"><div class="team-info"><div class="avatar" style="width:40px;height:40px;font-size:14px;background:linear-gradient(135deg,#6B5B95,#6B5B9599);margin:0;border:2px solid rgba(255,255,255,0.3)">MT</div><div><span class="team-label">Marketing Team</span><br><span class="sprint-label">Sprint 24 ▼</span></div></div><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div><div class="progress-section"><div class="progress-text"><span class="progress-number">12</span><span class="progress-label"> van 18 taken</span><span class="progress-percent">66%</span></div><div class="progress-bar"><div class="progress-fill"></div></div><p class="progress-note">Je ligt op schema voor vrijdag.</p></div></div>
       <div class="task-filters"><button class="filter-btn active" onclick="setTaskFilter('all')">Alles</button><button class="filter-btn" onclick="setTaskFilter('mine')">Mijn taken</button><button class="filter-btn" onclick="setTaskFilter('review')">In Review</button></div>
@@ -486,7 +486,7 @@
         <div class="task-card"><div class="task-header"><span class="tag progress-tag">In Progress</span></div><h3>Social Media Assets</h3><p class="task-meta">Design • Instagram</p></div>
       </div>
     </div>
-    <div id="team-screen" class="screen" style="padding:60px 20px 100px"></div>
+    <div id="team-screen" class="screen"></div>
     <button class="fab" id="fab-btn" onclick="openNewTaskModal()"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
     <div class="bottom-nav" id="bottom-nav">
       <button class="nav-item active" data-screen="home" onclick="navigateTo('home')"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></button>
